@@ -1,0 +1,64 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Urho3D specific
+bin/*
+!bin/CoreData
+!bin/Data
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# build folders
+/build*
+
+# temporary files
+*.kate-swp
+*.swp
+*~
+*.log
+
+# project files
+*.kdev4
+.idea/
+
+# Mac OS X
+.DS_Store
+
+# symlinks, generated using find . -type l >> .gitignore
+bin/CoreData
+CMake/Toolchains/raspberrypi.toolchain.cmake
+CMake/Toolchains/emscripten.toolchain.cmake
+CMake/Toolchains/android.toolchain.cmake
+CMake/Toolchains/mingw.toolchain.cmake
+CMake/Modules/FindPulseAudio.cmake
+CMake/Modules/GetUrho3DRevision.cmake
+CMake/Modules/GenerateExportHeader.cmake
+CMake/Modules/FindUrho3D.cmake
+CMake/Modules/FindODBC.cmake
+CMake/Modules/AdjustPkgConfigForMSVC.cmake
+CMake/Modules/MacOSXBundleInfo.plist.template
+CMake/Modules/exportheader.cmake.in
+CMake/Modules/iOSBundleInfo.plist.template
+CMake/Modules/FindDirect3D.cmake
+CMake/Modules/FindBCM_VC.cmake
+CMake/Modules/Urho3D-CMake-common.cmake
+CMake/Modules/CheckUrho3DLibrary.cpp
+urho3d
+

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<InputMapping>
+    <Context name="3rd person controls">
+        <Mapping action="forwards" device="keyboard" value="87" />
+        <Mapping action="backwards" device="keyboard" value="83" />
+        <Mapping action="left" device="keyboard" value="65" />
+        <Mapping action="right" device="keyboard" value="68" />
+        <Mapping action="action" device="keyboard" value="32" />
+    </Context>
+</InputMapping>
