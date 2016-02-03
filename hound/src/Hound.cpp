@@ -1,4 +1,6 @@
 #include "hound/Hound.h"
+#include "hound/PlayerController.h"
+#include "hound/CameraController.h"
 
 #include <Urho3D/Engine/Engine.h>
 #include <Urho3D/Resource/ResourceCache.h>
@@ -13,6 +15,7 @@
 #include <Urho3D/LuaScript/LuaFunction.h>
 #include <Urho3D/Input/InputEvents.h>
 #include <Urho3D/Input/Input.h>
+#include <Urho3D/IO/Log.h>
 
 using namespace Urho3D;
 
@@ -30,7 +33,6 @@ void Hound::Setup()
 	engineParameters_["WindowTitle"] = "Hound";
 	engineParameters_["FullScreen"]  = false;
 	engineParameters_["Headless"]    = false;
-
 }
 
 // ----------------------------------------------------------------------------
@@ -41,7 +43,8 @@ void Hound::Start()
 	context_->RegisterSubsystem(new LuaScript(context_));
 
 	CreateScene();
-	SetupViewports();
+	CreatePlayer();
+	CreateCamera();
 
 	SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(Hound, HandleKeyDown));
 }
@@ -49,6 +52,13 @@ void Hound::Start()
 // ----------------------------------------------------------------------------
 void Hound::Stop()
 {
+	cameraController_.Reset();
+	cameraNode_.Reset();
+
+	playerController_.Reset();
+	playerNode_.Reset();
+
+	scene_.Reset();
 }
 
 // ----------------------------------------------------------------------------
@@ -56,30 +66,56 @@ void Hound::CreateScene()
 {
 	ResourceCache* cache = GetSubsystem<ResourceCache>();
 
-	scene_ = SharedPtr<Scene>(new Scene(context_));
-	//XMLFile* sceneXML = cache->GetResource<XMLFile>("Scenes/TestScene.xml");
-	//scene_->LoadXML(sceneXML->GetRoot());
+	// load scene, delete XML file after use
+	scene_ = new Scene(context_);
+	XMLFile* sceneFile = cache->GetResource<XMLFile>("Scenes/Ramps.xml");
+	if(sceneFile)
+		scene_->LoadXML(sceneFile->GetRoot());
+	sceneFile->ReleaseRef();
+}
 
-	// set up camera
+// ----------------------------------------------------------------------------
+void Hound::CreatePlayer()
+{
+	playerNode_ = scene_->GetChild("Player");
+	if(!playerNode_)
+	{
+		URHO3D_LOGERROR("Scene doesn't have the node \"Player\"! Can't set up player controller");
+		return;
+	}
+
+	playerController_ = new PlayerController(context_);
+	playerController_->SetNodeToControl(playerNode_);
+}
+
+// ----------------------------------------------------------------------------
+void Hound::CreateCamera()
+{
+	if(!playerNode_)
+		URHO3D_LOGERROR("Camera has no player node to follow!");
+
 	cameraNode_ = scene_->CreateChild("Camera");
 	Camera* camera = cameraNode_->CreateComponent<Camera>();
 	camera->SetFarClip(300.0f);
 	cameraNode_->SetPosition(Vector3(0.0f, 5.0f, -20.0f));
-}
 
-// ----------------------------------------------------------------------------
-void Hound::SetupViewports()
-{
-	Renderer* renderer = GetSubsystem<Renderer>();
-	Camera* camera = cameraNode_->GetComponent<Camera>();
 	Viewport* viewport = new Viewport(context_, scene_, camera);
-	renderer->SetViewport(0, viewport);
+	GetSubsystem<Renderer>()->SetViewport(0, viewport);
+
+	cameraController_ = new CameraController(context_);
+	cameraController_->SetNodeToControl(cameraNode_);
+	cameraController_->SetNodeToFollow(playerNode_);
+	cameraController_->SetMouseSensitivity(0.2);
+	cameraController_->SetYOffset(0.7);
+	cameraController_->SetMinDistance(3.0);
+	cameraController_->SetMaxDistance(10.0);
 }
 
 // ----------------------------------------------------------------------------
 void Hound::HandleKeyDown(StringHash eventType, VariantMap& eventData)
 {
 	using namespace KeyDown;
+	(void)eventType;
 
 	// Check for pressing ESC
 	int key = eventData[P_KEY].GetInt();

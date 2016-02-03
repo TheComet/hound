@@ -1,16 +1,17 @@
 #include <Urho3D/Engine/Application.h>
 
-using namespace Urho3D;
-
 namespace Urho3D {
 	class Node;
 	class Scene;
 }
 
-class Hound : public Application
+class PlayerController;
+class CameraController;
+
+class Hound : public Urho3D::Application
 {
 public:
-    Hound(Context* context);
+    Hound(Urho3D::Context* context);
     virtual void Setup() override;
     virtual void Start() override;
     virtual void Stop() override;
@@ -18,11 +19,14 @@ public:
 private:
 
 	void CreateScene();
+	void CreatePlayer();
+	void CreateCamera();
 
-    void HandleKeyDown(StringHash eventType, VariantMap& eventData);
-	void SetupViewports();
+	void HandleKeyDown(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
-	SharedPtr<Scene> scene_;
-	SharedPtr<Node> cameraNode_;
+	Urho3D::SharedPtr<Urho3D::Scene> scene_;
+	Urho3D::SharedPtr<Urho3D::Node> playerNode_;
+	Urho3D::SharedPtr<Urho3D::Node> cameraNode_;
+	Urho3D::SharedPtr<PlayerController> playerController_;
+	Urho3D::SharedPtr<CameraController> cameraController_;
 };
-
