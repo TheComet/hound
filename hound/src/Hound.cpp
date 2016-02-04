@@ -86,6 +86,9 @@ void Hound::CreatePlayer()
 
 	playerController_ = new PlayerController(context_);
 	playerController_->SetNodeToControl(playerNode_);
+	playerController_->SetMaxSpeed(7);
+	playerController_->SetAccelerationSmoothness(0.1);
+	playerController_->SetRotateSmoothness(0.05);
 }
 
 // ----------------------------------------------------------------------------
@@ -109,6 +112,8 @@ void Hound::CreateCamera()
 	cameraController_->SetYOffset(0.7);
 	cameraController_->SetMinDistance(3.0);
 	cameraController_->SetMaxDistance(10.0);
+	cameraController_->SetRotateSmoothness(0.033);
+	cameraController_->SetZoomSmoothness(0.083);
 }
 
 // ----------------------------------------------------------------------------

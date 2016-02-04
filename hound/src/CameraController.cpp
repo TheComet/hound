@@ -11,8 +11,8 @@ CameraController::CameraController(Context* context) :
 	Object(context),
 	maxDistance_(10.0),
 	minDistance_(1.0),
-	rotateSmoothness_(2.0),
-	zoomSmoothness_(5.0),
+	rotateSmoothness_(1.0),
+	zoomSmoothness_(1.0),
 	mouseSensitivity_(1.0),
 	yOffset_(0.0),
 	actualAngleX_(0),
@@ -40,10 +40,10 @@ void CameraController::HandleMouseMove(StringHash eventType, VariantMap& eventDa
 	targetAngleY_ += dx;
 
 	// clamp X angle
-	if(targetAngleX_ >= 90)
-		targetAngleX_ = 90;
-	if(targetAngleX_ <= -90)
-		targetAngleX_ = -90;
+	if(targetAngleX_ >= 89)
+		targetAngleX_ = 89;
+	if(targetAngleX_ <= -89)
+		targetAngleX_ = -89;
 }
 
 // ----------------------------------------------------------------------------
@@ -71,9 +71,9 @@ void CameraController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	double timeStep = eventData[P_TIMESTEP].GetDouble();
 
 	// smooth rotations and distance changes
-	actualAngleX_ += (targetAngleX_ - actualAngleX_) * timeStep * 60.0 / rotateSmoothness_;
-	actualAngleY_ += (targetAngleY_ - actualAngleY_) * timeStep * 60.0 / rotateSmoothness_;
-	actualDistance_ += (targetDistance_ - actualDistance_) * timeStep * 60.0 / zoomSmoothness_;
+	actualAngleX_ += (targetAngleX_ - actualAngleX_) * timeStep / rotateSmoothness_;
+	actualAngleY_ += (targetAngleY_ - actualAngleY_) * timeStep / rotateSmoothness_;
+	actualDistance_ += (targetDistance_ - actualDistance_) * timeStep / zoomSmoothness_;
 
 	// rotate camera
 	Vector3 cameraPosition(0, 0, -actualDistance_);
