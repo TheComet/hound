@@ -16,6 +16,7 @@
 #include <Urho3D/Input/InputEvents.h>
 #include <Urho3D/Input/Input.h>
 #include <Urho3D/IO/Log.h>
+#include <Urho3D/Physics/PhysicsWorld.h>
 
 using namespace Urho3D;
 

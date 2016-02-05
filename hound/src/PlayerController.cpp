@@ -44,7 +44,7 @@ void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	if(targetDirection.x_ != 0 || targetDirection.y_ != 0)
 		targetDirection = targetDirection.Normalized() * maxSpeed_;
 
-	// rotate input direction by camera angle
+	// rotate input direction by camera angle using a 2D rotation matrix
 	targetDirection = Matrix2(Cos(cameraAngle_), -Sin(cameraAngle_),
 							  Sin(cameraAngle_), Cos(cameraAngle_)) * targetDirection;
 
