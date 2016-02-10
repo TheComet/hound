@@ -23,10 +23,13 @@ private:
 	void CreateCamera();
 
 	void HandleKeyDown(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+	void HandlePostRenderUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
 	Urho3D::SharedPtr<Urho3D::Scene> scene_;
 	Urho3D::SharedPtr<Urho3D::Node> playerNode_;
 	Urho3D::SharedPtr<Urho3D::Node> cameraNode_;
 	Urho3D::SharedPtr<PlayerController> playerController_;
 	Urho3D::SharedPtr<CameraController> cameraController_;
+
+	bool drawDebugGeometry_;
 };

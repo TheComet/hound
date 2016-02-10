@@ -17,12 +17,16 @@
 #include <Urho3D/Input/Input.h>
 #include <Urho3D/IO/Log.h>
 #include <Urho3D/Physics/PhysicsWorld.h>
+#include <Urho3D/Physics/RigidBody.h>
+#include <Urho3D/Physics/CollisionShape.h>
+#include <Urho3D/Core/CoreEvents.h>
 
 using namespace Urho3D;
 
 // ----------------------------------------------------------------------------
 Hound::Hound(Context* context) :
-	Application(context)
+	Application(context),
+	drawDebugGeometry_(false)
 {
 }
 
@@ -39,15 +43,45 @@ void Hound::Setup()
 // ----------------------------------------------------------------------------
 void Hound::Start()
 {
-	// called after engine initialization
-
-	context_->RegisterSubsystem(new LuaScript(context_));
-
 	CreateScene();
 	CreatePlayer();
 	CreateCamera();
 
+	/*
+	// create scene
+	scene_ = new Scene(context_);
+	scene_->CreateComponent<Octree>();
+    scene_->CreateComponent<PhysicsWorld>();
+
+	ResourceCache* cache = GetSubsystem<ResourceCache>();
+
+	Node* level = scene_->CreateChild("Level");
+	StaticModel* levelModel = level->CreateComponent<StaticModel>();
+	levelModel->SetModel(cache->GetResource<Model>("Models/ramps-level.mdl"));
+	levelModel->SetMaterial(cache->GetResource<Material>("Materials/DefaultMaterial.xml"));
+
+	// create player
+	playerNode_ = scene_->CreateChild("Player");
+	StaticModel* model = playerNode_->CreateComponent<StaticModel>();
+	model->SetModel(cache->GetResource<Model>("Models/player.mdl"));
+	model->SetMaterial(cache->GetResource<Material>("Materials/Material.xml"));
+	CreateCamera();
+
+	RigidBody* body = playerNode_->CreateComponent<RigidBody>();
+	body->SetMass(1);
+	CollisionShape* shape = playerNode_->CreateComponent<CollisionShape>();
+	shape->SetCapsule(9.36, 15.32);
+
+	// create a light source
+	Node* lightNode = scene_->CreateChild("Light");
+	lightNode->SetPosition(Vector3(10, 10, -50));
+	lightNode->LookAt(Vector3(0, 0, 0));
+	Light* light = lightNode->CreateComponent<Light>();
+	light->SetLightType(LIGHT_DIRECTIONAL);
+	light->SetColor(Color(255, 255, 255));*/
+
 	SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(Hound, HandleKeyDown));
+	SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(Hound, HandlePostRenderUpdate));
 }
 
 // ----------------------------------------------------------------------------
@@ -63,6 +97,7 @@ void Hound::Stop()
 }
 
 // ----------------------------------------------------------------------------
+#include <Urho3D/Graphics/DebugRenderer.h>
 void Hound::CreateScene()
 {
 	ResourceCache* cache = GetSubsystem<ResourceCache>();
@@ -71,8 +106,14 @@ void Hound::CreateScene()
 	scene_ = new Scene(context_);
 	XMLFile* sceneFile = cache->GetResource<XMLFile>("Scenes/Ramps.xml");
 	if(sceneFile)
+	{
 		scene_->LoadXML(sceneFile->GetRoot());
-	sceneFile->ReleaseRef();
+		sceneFile->ReleaseRef();
+	}
+
+	;
+	PhysicsWorld* world = scene_->GetComponent<PhysicsWorld>();
+	world->DrawDebugGeometry(scene_->CreateComponent<DebugRenderer>());
 }
 
 // ----------------------------------------------------------------------------
@@ -104,6 +145,7 @@ void Hound::CreateCamera()
 	cameraNode_->SetPosition(Vector3(0.0f, 5.0f, -20.0f));
 
 	Viewport* viewport = new Viewport(context_, scene_, camera);
+	viewport->SetDrawDebug(true);
 	GetSubsystem<Renderer>()->SetViewport(0, viewport);
 
 	cameraController_ = new CameraController(context_);
@@ -127,6 +169,24 @@ void Hound::HandleKeyDown(StringHash eventType, VariantMap& eventData)
 	int key = eventData[P_KEY].GetInt();
 	if(key == KEY_ESC)
 		engine_->Exit();
+
+	// Toggle debug geometry
+	if(key == KEY_P)
+		drawDebugGeometry_ = !drawDebugGeometry_;
+}
+
+// ----------------------------------------------------------------------------
+void Hound::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
+{
+	(void)eventType;
+	(void)eventData;
+	if(!drawDebugGeometry_)
+		return;
+
+	PhysicsWorld* phy = scene_->GetComponent<PhysicsWorld>();
+	if(!phy)
+		return;
+	phy->DrawDebugGeometry(true);
 }
 
 // ----------------------------------------------------------------------------

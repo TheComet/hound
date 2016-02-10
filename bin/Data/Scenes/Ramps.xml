@@ -5,8 +5,8 @@
 	<attribute name="Smoothing Constant" value="50" />
 	<attribute name="Snap Threshold" value="5" />
 	<attribute name="Elapsed Time" value="0" />
-	<attribute name="Next Replicated Node ID" value="12" />
-	<attribute name="Next Replicated Component ID" value="23" />
+	<attribute name="Next Replicated Node ID" value="13" />
+	<attribute name="Next Replicated Component ID" value="38" />
 	<attribute name="Next Local Node ID" value="16777221" />
 	<attribute name="Next Local Component ID" value="16777252" />
 	<attribute name="Variables" />
@@ -16,7 +16,9 @@
 		<attribute name="Bounding Box Max" value="100 100 100" />
 	</component>
 	<component type="DebugRenderer" id="2" />
-	<component type="PhysicsWorld" id="15" />
+	<component type="PhysicsWorld" id="15">
+		<attribute name="Gravity" value="nan 0 0" />
+	</component>
 	<node id="3">
 		<attribute name="Is Enabled" value="true" />
 		<attribute name="Name" value="ramps-level" />
@@ -29,7 +31,10 @@
 			<attribute name="Model" value="Model;Models/ramps-level.mdl" />
 			<attribute name="Material" value="Material;Materials/Material.xml" />
 		</component>
-		<component type="CollisionShape" id="18">
+		<component type="RigidBody" id="36">
+			<attribute name="Physics Rotation" value="0.707107 0.707107 0 0" />
+		</component>
+		<component type="CollisionShape" id="37">
 			<attribute name="Shape Type" value="TriangleMesh" />
 			<attribute name="Model" value="Model;Models/ramps-level.mdl" />
 		</component>
@@ -38,20 +43,29 @@
 		<attribute name="Is Enabled" value="true" />
 		<attribute name="Name" value="Player" />
 		<attribute name="Tags" />
-		<attribute name="Position" value="0 0 0" />
+		<attribute name="Position" value="0 0.0612545 0" />
 		<attribute name="Rotation" value="1 0 0 0" />
 		<attribute name="Scale" value="0.122842 0.122842 0.122842" />
 		<attribute name="Variables" />
-		<component type="CollisionShape" id="17">
-			<attribute name="Shape Type" value="Capsule" />
-			<attribute name="Size" value="9.36 15.32 2" />
-			<attribute name="Offset Position" value="0 3.87 -1.37" />
-			<attribute name="Offset Rotation" value="0.707107 0.707107 0 0" />
-			<attribute name="Model" value="Model;Models/greyhound-monster.mdl" />
-		</component>
 		<component type="StaticModel" id="22">
 			<attribute name="Model" value="Model;Models/greyhound-monster.mdl" />
 			<attribute name="Material" value="Material;Materials/DefaultMaterial.xml" />
+		</component>
+		<component type="RigidBody" id="33">
+			<attribute name="Physics Position" value="0 0.0612546 0" />
+			<attribute name="Mass" value="1" />
+			<attribute name="Friction" value="0" />
+			<attribute name="Anisotropic Friction" value="0 0 0" />
+			<attribute name="Linear Factor" value="0 0 0" />
+			<attribute name="Angular Factor" value="0 0 0" />
+			<attribute name="Collision Event Mode" value="Always" />
+			<attribute name="Use Gravity" value="false" />
+		</component>
+		<component type="CollisionShape" id="34">
+			<attribute name="Shape Type" value="Capsule" />
+			<attribute name="Size" value="9.84 15.81 1" />
+			<attribute name="Offset Position" value="0 4.34 -0.65" />
+			<attribute name="Offset Rotation" value="0.707107 0.707107 0 0" />
 		</component>
 	</node>
 	<node id="10">
@@ -66,14 +80,5 @@
 			<attribute name="Light Type" value="Directional" />
 			<attribute name="Range" value="100" />
 		</component>
-	</node>
-	<node id="11">
-		<attribute name="Is Enabled" value="true" />
-		<attribute name="Name" value="greyhound-monster" />
-		<attribute name="Tags" />
-		<attribute name="Position" value="1.20174 1.93647 -5.41866" />
-		<attribute name="Rotation" value="1 0 0 0" />
-		<attribute name="Scale" value="0.0735121 0.0735121 0.0735121" />
-		<attribute name="Variables" />
 	</node>
 </scene>

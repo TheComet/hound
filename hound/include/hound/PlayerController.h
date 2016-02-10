@@ -26,20 +26,20 @@ public:
 	 * @brief Gives the controller a node to manipulate.
 	 * @param node The node to control.
 	 */
-	void SetNodeToControl(Urho3D::Node* node)
-			{ node_ = Urho3D::SharedPtr<Urho3D::Node>(node); }
+	void SetNodeToControl(Urho3D::Node* node);
 
 	void SetMaxSpeed(double speed) { maxSpeed_ = speed; }
 
 	void SetAccelerationSmoothness(double smoothness)
 			{ accelerationSmoothness_ = smoothness; }
-			
+
 	void SetRotateSmoothness(double smoothness)
 			{ rotateSmoothness_ = smoothness; }
 
 private:
 	void HandleUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleCameraRotated(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+	void HandleCollisionStart(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
 	Urho3D::SharedPtr<Urho3D::Node> node_;
 

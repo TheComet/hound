@@ -6,6 +6,7 @@
 #include <Urho3D/Scene/Node.h>
 #include <Urho3D/Core/CoreEvents.h>
 #include <Urho3D/Math/Matrix2.h>
+#include <Urho3D/Physics/PhysicsEvents.h>
 
 using namespace Urho3D;
 
@@ -20,9 +21,18 @@ PlayerController::PlayerController(Context* context) :
 {
 	SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(PlayerController, HandleUpdate));
 	SubscribeToEvent(E_CAMERA_ROTATED, URHO3D_HANDLER(PlayerController, HandleCameraRotated));
+	SubscribeToEvent(E_PHYSICSCOLLISION, URHO3D_HANDLER(PlayerController, HandleCollisionStart));
 }
 
-#include <iostream>
+// ----------------------------------------------------------------------------
+void PlayerController::SetNodeToControl(Node* node)
+{
+	node_ = Urho3D::SharedPtr<Urho3D::Node>(node);
+
+	if(node_)
+		node_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
+}
+#include <Urho3D/Physics/RigidBody.h>
 // ----------------------------------------------------------------------------
 void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 {
@@ -50,7 +60,8 @@ void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 
 	// apply the direction
 	actualDirection_ += (targetDirection - actualDirection_) * timeStep / accelerationSmoothness_;
-	node_->SetPosition(node_->GetPosition() + Vector3(actualDirection_.x_, 0, actualDirection_.y_) * timeStep);
+	//node_->SetPosition(node_->GetPosition() + Vector3(actualDirection_.x_, 0, actualDirection_.y_) * timeStep);
+	node_->GetComponent<RigidBody>()->SetLinearVelocity(Vector3(actualDirection_.x_, 0, actualDirection_.y_));
 
 	// apply rotation
 	float dotProduct = actualDirection_.y_;  // with Vector2(0, 1)
@@ -71,4 +82,12 @@ void PlayerController::HandleCameraRotated(StringHash eventType, VariantMap& eve
 	(void)eventType;
 
 	cameraAngle_ = -eventData[P_ANGLE].GetDouble();
+}
+
+// ----------------------------------------------------------------------------
+#include <iostream>
+void PlayerController::HandleCollisionStart(StringHash eventType, VariantMap& eventData)
+{
+	using namespace NodeCollisionStart;
+	(void)eventType;
 }
