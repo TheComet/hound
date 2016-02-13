@@ -42,43 +42,60 @@ void Hound::Setup()
 
 // ----------------------------------------------------------------------------
 void Hound::Start()
-{
+{/*
 	CreateScene();
 	CreatePlayer();
-	CreateCamera();
+	CreateCamera();*/
 
-	/*
 	// create scene
+	/*
 	scene_ = new Scene(context_);
 	scene_->CreateComponent<Octree>();
-    scene_->CreateComponent<PhysicsWorld>();
+	scene_->CreateComponent<DebugRenderer>();
+    scene_->CreateComponent<PhysicsWorld>();*/
 
 	ResourceCache* cache = GetSubsystem<ResourceCache>();
-
+/*
+	// level
 	Node* level = scene_->CreateChild("Level");
-	StaticModel* levelModel = level->CreateComponent<StaticModel>();
-	levelModel->SetModel(cache->GetResource<Model>("Models/ramps-level.mdl"));
-	levelModel->SetMaterial(cache->GetResource<Material>("Materials/DefaultMaterial.xml"));
+	StaticModel* levelStaticModel = level->CreateComponent<StaticModel>();
+	level->SetRotation(Quaternion(90, Vector3::LEFT));
+	level->SetPosition(Vector3(0, -5, 0));
+	Model* levelModel = cache->GetResource<Model>("Models/ramps-level.mdl");
+	levelStaticModel->SetModel(levelModel);
+	levelStaticModel->SetMaterial(cache->GetResource<Material>("Materials/DefaultMaterial.xml"));*/
+	CreateScene();
 
 	// create player
+	/*
 	playerNode_ = scene_->CreateChild("Player");
+	playerNode_->SetScale(Vector3(0.122842, 0.122842, 0.122842));
 	StaticModel* model = playerNode_->CreateComponent<StaticModel>();
 	model->SetModel(cache->GetResource<Model>("Models/player.mdl"));
 	model->SetMaterial(cache->GetResource<Material>("Materials/Material.xml"));
-	CreateCamera();
 
 	RigidBody* body = playerNode_->CreateComponent<RigidBody>();
 	body->SetMass(1);
 	CollisionShape* shape = playerNode_->CreateComponent<CollisionShape>();
 	shape->SetCapsule(9.36, 15.32);
 
+	playerController_ = new PlayerController(context_);
+	playerController_->SetNodeToControl(playerNode_);
+	playerController_->SetMaxSpeed(7);
+	playerController_->SetAccelerationSmoothness(0.1);
+	playerController_->SetRotateSmoothness(0.05);*/
+	CreatePlayer();
+
 	// create a light source
+	/*
 	Node* lightNode = scene_->CreateChild("Light");
 	lightNode->SetPosition(Vector3(10, 10, -50));
 	lightNode->LookAt(Vector3(0, 0, 0));
 	Light* light = lightNode->CreateComponent<Light>();
 	light->SetLightType(LIGHT_DIRECTIONAL);
 	light->SetColor(Color(255, 255, 255));*/
+
+	CreateCamera();
 
 	SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(Hound, HandleKeyDown));
 	SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(Hound, HandlePostRenderUpdate));
@@ -97,6 +114,7 @@ void Hound::Stop()
 }
 
 // ----------------------------------------------------------------------------
+#include <iostream>
 #include <Urho3D/Graphics/DebugRenderer.h>
 void Hound::CreateScene()
 {
@@ -111,9 +129,11 @@ void Hound::CreateScene()
 		sceneFile->ReleaseRef();
 	}
 
-	;
-	PhysicsWorld* world = scene_->GetComponent<PhysicsWorld>();
-	world->DrawDebugGeometry(scene_->CreateComponent<DebugRenderer>());
+	// issue #1193 - gravity is not exported correctly from editor
+	scene_->GetComponent<PhysicsWorld>()->SetGravity(Vector3(0, -9.81, 0));
+
+	/*RigidBody* body = scene_->GetChild("Player")->GetComponent<RigidBody>();
+	body->SetGravityOverride(Vector3(0, -9.81, 0));*/
 }
 
 // ----------------------------------------------------------------------------

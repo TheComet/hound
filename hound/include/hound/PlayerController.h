@@ -4,6 +4,7 @@
 #include <Urho3D/Core/Object.h>
 #include <Urho3D/Core/Variant.h>
 #include <Urho3D/Math/StringHash.h>
+#include <Urho3D/IO/VectorBuffer.h>
 
 namespace Urho3D {
 	class Context;
@@ -39,7 +40,8 @@ public:
 private:
 	void HandleUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleCameraRotated(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
-	void HandleCollisionStart(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+	void HandleCollision(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+	void HandlePostRenderUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
 	Urho3D::SharedPtr<Urho3D::Node> node_;
 
@@ -50,6 +52,7 @@ private:
 	double actualAngle_;
 
 	Urho3D::Vector2 actualDirection_;
+	Urho3D::VectorBuffer contacts_;
 };
 
 #endif // PLAYER_CONTROLLER_H

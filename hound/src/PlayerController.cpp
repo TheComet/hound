@@ -21,7 +21,8 @@ PlayerController::PlayerController(Context* context) :
 {
 	SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(PlayerController, HandleUpdate));
 	SubscribeToEvent(E_CAMERA_ROTATED, URHO3D_HANDLER(PlayerController, HandleCameraRotated));
-	SubscribeToEvent(E_PHYSICSCOLLISION, URHO3D_HANDLER(PlayerController, HandleCollisionStart));
+	SubscribeToEvent(E_PHYSICSCOLLISION, URHO3D_HANDLER(PlayerController, HandleCollision));
+	SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(PlayerController, HandlePostRenderUpdate));
 }
 
 // ----------------------------------------------------------------------------
@@ -61,7 +62,10 @@ void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	// apply the direction
 	actualDirection_ += (targetDirection - actualDirection_) * timeStep / accelerationSmoothness_;
 	//node_->SetPosition(node_->GetPosition() + Vector3(actualDirection_.x_, 0, actualDirection_.y_) * timeStep);
-	node_->GetComponent<RigidBody>()->SetLinearVelocity(Vector3(actualDirection_.x_, 0, actualDirection_.y_));
+	node_->GetComponent<RigidBody>()->SetLinearVelocity(
+		Vector3(actualDirection_.x_,
+				node_->GetComponent<RigidBody>()->GetLinearVelocity().y_,
+				actualDirection_.y_));
 
 	// apply rotation
 	float dotProduct = actualDirection_.y_;  // with Vector2(0, 1)
@@ -85,9 +89,41 @@ void PlayerController::HandleCameraRotated(StringHash eventType, VariantMap& eve
 }
 
 // ----------------------------------------------------------------------------
-#include <iostream>
-void PlayerController::HandleCollisionStart(StringHash eventType, VariantMap& eventData)
+void PlayerController::HandleCollision(StringHash eventType, VariantMap& eventData)
 {
-	using namespace NodeCollisionStart;
+	using namespace PhysicsCollision;
 	(void)eventType;
+
+	contacts_ = eventData[P_CONTACTS].GetBuffer();
+	while(!contacts_.IsEof())
+	{
+		Vector3 position = contacts_.ReadVector3();
+		Vector3 normal = contacts_.ReadVector3();
+		float distance = contacts_.ReadFloat();
+		float impulse = contacts_.ReadFloat();
+	}
+}
+
+// ----------------------------------------------------------------------------
+#include <Urho3D/Graphics/DebugRenderer.h>
+void PlayerController::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
+{
+	(void)eventType;
+	(void)eventData;
+
+	DebugRenderer* renderer = node_->GetParentComponent<DebugRenderer>();
+	if(!renderer)
+		return;
+
+	contacts_.Seek(0);
+	while(!contacts_.IsEof())
+	{
+		Vector3 position = contacts_.ReadVector3();
+		Vector3 normal = contacts_.ReadVector3();
+		float distance = contacts_.ReadFloat();
+		float impulse = contacts_.ReadFloat();
+		(void)impulse;
+
+		renderer->AddCircle(position, normal, distance, Color(255, 0, 0));
+	}
 }
