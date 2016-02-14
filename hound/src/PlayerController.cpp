@@ -71,11 +71,14 @@ void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	float dotProduct = actualDirection_.y_;  // with Vector2(0, 1)
 	float determinant = actualDirection_.x_; // with Vector2(0, 1)
 	float targetAngle = Atan2(determinant, dotProduct);
+    // always approach target angle with shortest angle (max 180°) to avoid
+    // flipping
 	if(actualAngle_ - targetAngle > 180)
 		actualAngle_ -= 360;
 	if(actualAngle_ - targetAngle < -180)
 		actualAngle_ += 360;
 	actualAngle_ += (targetAngle - actualAngle_) * timeStep / rotateSmoothness_;
+
 	node_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
 }
 

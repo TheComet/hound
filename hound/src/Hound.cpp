@@ -42,59 +42,9 @@ void Hound::Setup()
 
 // ----------------------------------------------------------------------------
 void Hound::Start()
-{/*
+{
 	CreateScene();
 	CreatePlayer();
-	CreateCamera();*/
-
-	// create scene
-	/*
-	scene_ = new Scene(context_);
-	scene_->CreateComponent<Octree>();
-	scene_->CreateComponent<DebugRenderer>();
-    scene_->CreateComponent<PhysicsWorld>();*/
-
-	ResourceCache* cache = GetSubsystem<ResourceCache>();
-/*
-	// level
-	Node* level = scene_->CreateChild("Level");
-	StaticModel* levelStaticModel = level->CreateComponent<StaticModel>();
-	level->SetRotation(Quaternion(90, Vector3::LEFT));
-	level->SetPosition(Vector3(0, -5, 0));
-	Model* levelModel = cache->GetResource<Model>("Models/ramps-level.mdl");
-	levelStaticModel->SetModel(levelModel);
-	levelStaticModel->SetMaterial(cache->GetResource<Material>("Materials/DefaultMaterial.xml"));*/
-	CreateScene();
-
-	// create player
-	/*
-	playerNode_ = scene_->CreateChild("Player");
-	playerNode_->SetScale(Vector3(0.122842, 0.122842, 0.122842));
-	StaticModel* model = playerNode_->CreateComponent<StaticModel>();
-	model->SetModel(cache->GetResource<Model>("Models/player.mdl"));
-	model->SetMaterial(cache->GetResource<Material>("Materials/Material.xml"));
-
-	RigidBody* body = playerNode_->CreateComponent<RigidBody>();
-	body->SetMass(1);
-	CollisionShape* shape = playerNode_->CreateComponent<CollisionShape>();
-	shape->SetCapsule(9.36, 15.32);
-
-	playerController_ = new PlayerController(context_);
-	playerController_->SetNodeToControl(playerNode_);
-	playerController_->SetMaxSpeed(7);
-	playerController_->SetAccelerationSmoothness(0.1);
-	playerController_->SetRotateSmoothness(0.05);*/
-	CreatePlayer();
-
-	// create a light source
-	/*
-	Node* lightNode = scene_->CreateChild("Light");
-	lightNode->SetPosition(Vector3(10, 10, -50));
-	lightNode->LookAt(Vector3(0, 0, 0));
-	Light* light = lightNode->CreateComponent<Light>();
-	light->SetLightType(LIGHT_DIRECTIONAL);
-	light->SetColor(Color(255, 255, 255));*/
-
 	CreateCamera();
 
 	SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(Hound, HandleKeyDown));
@@ -131,9 +81,6 @@ void Hound::CreateScene()
 
 	// issue #1193 - gravity is not exported correctly from editor
 	scene_->GetComponent<PhysicsWorld>()->SetGravity(Vector3(0, -9.81, 0));
-
-	/*RigidBody* body = scene_->GetChild("Player")->GetComponent<RigidBody>();
-	body->SetGravityOverride(Vector3(0, -9.81, 0));*/
 }
 
 // ----------------------------------------------------------------------------
@@ -172,8 +119,8 @@ void Hound::CreateCamera()
 	cameraController_->SetNodeToControl(cameraNode_);
 	cameraController_->SetNodeToFollow(playerNode_);
 	cameraController_->SetMouseSensitivity(0.2);
-	cameraController_->SetYOffset(0.7);
-	cameraController_->SetMinDistance(3.0);
+	cameraController_->SetYOffset(0.4);
+	cameraController_->SetMinDistance(1.5);
 	cameraController_->SetMaxDistance(10.0);
 	cameraController_->SetRotateSmoothness(0.033);
 	cameraController_->SetZoomSmoothness(0.083);

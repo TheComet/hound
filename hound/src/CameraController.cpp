@@ -54,6 +54,7 @@ void CameraController::HandleMouseWheel(StringHash eventType, VariantMap& eventD
 
 	int dz = eventData[P_WHEEL].GetInt();
 
+    // Mouse controls target distance
 	targetDistance_ -= dz;
 	if(targetDistance_ > maxDistance_) targetDistance_ = maxDistance_;
 	if(targetDistance_ < minDistance_) targetDistance_ = minDistance_;
