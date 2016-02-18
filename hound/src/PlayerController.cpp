@@ -7,6 +7,10 @@
 #include <Urho3D/Core/CoreEvents.h>
 #include <Urho3D/Math/Matrix2.h>
 #include <Urho3D/Physics/PhysicsEvents.h>
+#include <Urho3D/Physics/RigidBody.h>
+#include <Urho3D/Graphics/DebugRenderer.h>
+#include <Urho3D/Graphics/AnimatedModel.h>
+#include <Urho3D/Graphics/AnimationState.h>
 
 using namespace Urho3D;
 
@@ -33,7 +37,7 @@ void PlayerController::SetNodeToControl(Node* node)
 	if(node_)
 		node_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
 }
-#include <Urho3D/Physics/RigidBody.h>
+
 // ----------------------------------------------------------------------------
 void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 {
@@ -80,6 +84,14 @@ void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	actualAngle_ += (targetAngle - actualAngle_) * timeStep / rotateSmoothness_;
 
 	node_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
+
+	// update animation
+	AnimatedModel* model = node_->GetComponent<AnimatedModel>();
+	if (model->GetNumAnimationStates())
+    {
+        AnimationState* state = model->GetAnimationStates()[0];
+        state->AddTime(timeStep);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -108,7 +120,6 @@ void PlayerController::HandleCollision(StringHash eventType, VariantMap& eventDa
 }
 
 // ----------------------------------------------------------------------------
-#include <Urho3D/Graphics/DebugRenderer.h>
 void PlayerController::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
 {
 	(void)eventType;

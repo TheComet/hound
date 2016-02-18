@@ -21,6 +21,7 @@ private:
 	void CreateScene();
 	void CreatePlayer();
 	void CreateCamera();
+    void CreateUI();
 
 	void HandleKeyDown(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandlePostRenderUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
