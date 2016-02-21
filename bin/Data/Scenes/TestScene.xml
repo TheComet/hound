@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<scene id="1">
+	<attribute name="Name" value="" />
+	<attribute name="Time Scale" value="1" />
+	<attribute name="Smoothing Constant" value="50" />
+	<attribute name="Snap Threshold" value="5" />
+	<attribute name="Elapsed Time" value="1545.04" />
+	<attribute name="Next Replicated Node ID" value="3" />
+	<attribute name="Next Replicated Component ID" value="11" />
+	<attribute name="Next Local Node ID" value="16777219" />
+	<attribute name="Next Local Component ID" value="16777218" />
+	<attribute name="Variables" />
+	<attribute name="Variable Names" value="" />
+	<component type="Octree" id="1" />
+	<component type="DebugRenderer" id="2" />
+	<node id="2">
+		<attribute name="Is Enabled" value="true" />
+		<attribute name="Name" value="Player" />
+		<attribute name="Position" value="0 0 -2.28454e-07" />
+		<attribute name="Rotation" value="0.707107 0.707107 0 0" />
+		<attribute name="Scale" value="1 1 1" />
+		<attribute name="Variables" />
+		<component type="StaticModel" id="3">
+			<attribute name="Model" value="Model;Models/player.mdl" />
+			<attribute name="Material" value="Material;Materials/Material.xml" />
+		</component>
+		<component type="LuaScriptInstance" id="10">
+			<attribute name="Script File" value="LuaFile;LuaScripts/CharacterController.lua" />
+			<attribute name="Script Object Type" value="CharacterController" />
+		</component>
+        <component type="InputMapping" id="4">
+        </component>
+		<node id="16777216">
+			<attribute name="Is Enabled" value="true" />
+			<attribute name="Name" value="Light" />
+			<attribute name="Position" value="-0.0109353 -0.34411 -1.23672" />
+			<attribute name="Rotation" value="1 0 0 0" />
+			<attribute name="Scale" value="1 1 1" />
+			<attribute name="Variables" />
+			<component type="Light" id="16777216">
+				<attribute name="Color" value="0.5 0 1 1" />
+				<attribute name="Range" value="2" />
+				<attribute name="Light Shape Texture" value="TextureCube;" />
+			</component>
+		</node>
+	</node>
+</scene>
