@@ -7,6 +7,7 @@
 #include <Urho3D/IO/VectorBuffer.h>
 
 namespace Urho3D {
+	class AnimationState;
 	class Context;
 	class Node;
 }
@@ -44,6 +45,8 @@ private:
 	void HandlePostRenderUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
 	Urho3D::SharedPtr<Urho3D::Node> node_;
+	Urho3D::SharedPtr<Urho3D::AnimationState> walkAnimation_;
+	Urho3D::SharedPtr<Urho3D::AnimationState> duckAnimation_;
 
 	double maxSpeed_;
 	double accelerationSmoothness_;

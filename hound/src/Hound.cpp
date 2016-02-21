@@ -48,6 +48,7 @@ void Hound::Setup()
 	engineParameters_["WindowTitle"] = "Hound";
 	engineParameters_["FullScreen"]  = false;
 	engineParameters_["Headless"]    = false;
+	engineParameters_["Multisample"] = 2;
 }
 
 // ----------------------------------------------------------------------------
@@ -103,20 +104,9 @@ void Hound::CreatePlayer()
 
 	playerController_ = new PlayerController(context_);
 	playerController_->SetNodeToControl(playerNode_);
-	playerController_->SetMaxSpeed(7);
+	playerController_->SetMaxSpeed(1.2);
 	playerController_->SetAccelerationSmoothness(0.1);
 	playerController_->SetRotateSmoothness(0.05);
-
-    AnimatedModel* model = playerNode_->GetComponent<AnimatedModel>();
-    if(!model)
-        return;
-
-    const Vector<SharedPtr<AnimationState>>& states = model->GetAnimationStates();
-    std::cout << "There are " << states.Size() << " animation states" << std::endl;
-    for(Vector<SharedPtr<AnimationState>>::ConstIterator it = states.Begin(); it != states.End(); ++it)
-    {
-        std::cout << (*it)->GetAnimation()->GetAnimationName().CString() << std::endl;
-    }
 }
 
 // ----------------------------------------------------------------------------
@@ -148,45 +138,45 @@ void Hound::CreateCamera()
 // ----------------------------------------------------------------------------
 void Hound::CreateUI()
 {
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
-    UIElement* root = ui->GetRoot();
+	ResourceCache* cache = GetSubsystem<ResourceCache>();
+	UI* ui = GetSubsystem<UI>();
+	UIElement* root = ui->GetRoot();
 
-    XMLFile* xmlDefaultStyle = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
-    root->SetDefaultStyle(xmlDefaultStyle);
+	XMLFile* xmlDefaultStyle = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
+	root->SetDefaultStyle(xmlDefaultStyle);
 
-    Window* window = new Window(context_);
-    window->SetMinWidth(384);
-    window->SetMinHeight(100);
-    window->SetPosition(8, 8);
-    window->SetLayout(LM_VERTICAL, 6, IntRect(6, 6, 6, 6));
-    window->SetName("Window");
+	Window* window = new Window(context_);
+	window->SetMinWidth(384);
+	window->SetMinHeight(100);
+	window->SetPosition(8, 8);
+	window->SetLayout(LM_VERTICAL, 6, IntRect(6, 6, 6, 6));
+	window->SetName("Window");
 
-    UIElement* titleBar = new UIElement(context_);
-    titleBar->SetMinSize(0, 24);
-    titleBar->SetVerticalAlignment(VA_TOP);
-    titleBar->SetLayoutMode(LM_HORIZONTAL);
+	UIElement* titleBar = new UIElement(context_);
+	titleBar->SetMinSize(0, 24);
+	titleBar->SetVerticalAlignment(VA_TOP);
+	titleBar->SetLayoutMode(LM_HORIZONTAL);
 
-    Text* windowTitle = new Text(context_);
-    windowTitle->SetName("WindowTitle");
-    windowTitle->SetText("This is a test!");
+	Text* windowTitle = new Text(context_);
+	windowTitle->SetName("WindowTitle");
+	windowTitle->SetText("This is a test!");
 
-    Button* button = new Button(context_);
-    button->SetName("TestButton");
+	Button* button = new Button(context_);
+	button->SetName("TestButton");
 
-    Text* buttonText = new Text(context_);
-    buttonText->SetText("button");
+	Text* buttonText = new Text(context_);
+	buttonText->SetText("button");
 
-    root->AddChild(window);
-    window->AddChild(button);
-    window->AddChild(titleBar);
-    titleBar->AddChild(windowTitle);
-    button->AddChild(buttonText);
+	root->AddChild(window);
+	window->AddChild(button);
+	window->AddChild(titleBar);
+	titleBar->AddChild(windowTitle);
+	button->AddChild(buttonText);
 
-    window->SetStyleAuto();
-    button->SetStyleAuto();
-    windowTitle->SetStyleAuto();
-    buttonText->SetStyleAuto();
+	window->SetStyleAuto();
+	button->SetStyleAuto();
+	windowTitle->SetStyleAuto();
+	buttonText->SetStyleAuto();
 }
 
 // ----------------------------------------------------------------------------

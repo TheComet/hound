@@ -32,10 +32,17 @@ PlayerController::PlayerController(Context* context) :
 // ----------------------------------------------------------------------------
 void PlayerController::SetNodeToControl(Node* node)
 {
-	node_ = Urho3D::SharedPtr<Urho3D::Node>(node);
+	node_ = SharedPtr<Node>(node);
 
 	if(node_)
 		node_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
+
+	AnimatedModel* model = node_->GetComponent<AnimatedModel>();
+	if(model && model->GetNumAnimationStates())
+	{
+		AnimationState* state = model->GetAnimationStates()[0];
+		state->SetWeight(1);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -87,11 +94,11 @@ void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 
 	// update animation
 	AnimatedModel* model = node_->GetComponent<AnimatedModel>();
-	if (model->GetNumAnimationStates())
-    {
-        AnimationState* state = model->GetAnimationStates()[0];
-        state->AddTime(timeStep);
-    }
+	if(model->GetNumAnimationStates())
+	{
+		AnimationState* state = model->GetAnimationStates()[0];
+		state->AddTime(timeStep);
+	}
 }
 
 // ----------------------------------------------------------------------------
