@@ -42,23 +42,26 @@ public:
 	void SetNodeToFollow(Urho3D::Node* node)
 			{ followNode_ = Urho3D::SharedPtr<Urho3D::Node>(node); }
 
-	void SetMaxDistance(double distance) { maxDistance_ = distance; }
-	void SetMinDistance(double distance) { minDistance_ = distance; }
+	void SetMaxDistance(double distance) { config_.maxDistance_ = distance; }
+	void SetMinDistance(double distance) { config_.minDistance_ = distance; }
 
 	void SetRotationSmoothness(double smoothness)
-			{ rotateSmoothness_ = smoothness; }
+			{ config_.rotateSmoothness_ = smoothness; }
 	void SetZoomSmoothness(double smoothness)
-			{ zoomSmoothness_ = smoothness; }
+			{ config_.zoomSmoothness_ = smoothness; }
 
-	void SetMouseSensitivity(double sensitivity)
-			{ mouseSensitivity_ = sensitivity; }
+	void SetMouseMoveSensitivity(double sensitivity)
+			{ config_.mouseMoveSensitivity_ = sensitivity; }
+	void SetMouseZoomSensitivity(double sensitivity)
+			{ config_.mouseZoomSensitivity_ = sensitivity; }
 
 	void SetYOffset(double yOffset)
-			{ yOffset_ = yOffset; }
+			{ config_.yOffset_ = yOffset; }
 
 private:
 	void HandleMouseMove(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleMouseWheel(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+	void ApplyMouseWheel(int dz);
 	void HandleUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleFileChanged(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
@@ -68,19 +71,23 @@ private:
 
 	Urho3D::String configResourceName_;
 
-	double maxDistance_;
-	double minDistance_;
-	double rotateSmoothness_;
-	double zoomSmoothness_;
-	double mouseSensitivity_;
-	double yOffset_;
+	struct
+	{
+		double maxDistance_ = 5;
+		double minDistance_ = 1.5;
+		double rotateSmoothness_ = 1;
+		double zoomSmoothness_ = 1;
+		double mouseMoveSensitivity_ = 1;
+		double mouseZoomSensitivity_ = 1;
+		double yOffset_ = 0;
+	} config_;
 
-	double actualAngleX_;
-	double targetAngleX_;
-	double actualAngleY_;
-	double targetAngleY_;
-	double actualDistance_;
-	double targetDistance_;
+	double actualAngleX_ = 0;
+	double targetAngleX_ = 0;
+	double actualAngleY_ = 0;
+	double targetAngleY_ = 0;
+	double actualDistance_ = 0;
+	double targetDistance_ = 0;
 };
 
 #endif // CAMERA_CONTROLLER_H

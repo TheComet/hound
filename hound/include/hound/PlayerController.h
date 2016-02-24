@@ -9,6 +9,8 @@
 namespace Urho3D {
 	class AnimationState;
 	class Context;
+	class DebugRenderer;
+	class Input;
 	class Node;
 	class Scene;
 	class XMLFile;
@@ -34,34 +36,42 @@ public:
 	 */
 	void SetNodeToControl(Urho3D::Node* node);
 
-	void SetWalkSpeed(double speed) { walkSpeed_ = speed; }
-	void SetTrotSpeed(double speed) { trotSpeed_ = speed; }
-	void SetRunSpeed(double speed) { runSpeed_ = speed; }
+	void SetWalkSpeed(double speed) { config_.walkSpeed_ = speed; }
+	void SetTrotSpeed(double speed) { config_.trotSpeed_ = speed; }
+	void SetRunSpeed(double speed) { config_.runSpeed_ = speed; }
 
 	void SetAccelerationSmoothness(double smoothness)
-			{ accelerationSmoothness_ = smoothness; }
+			{ config_.accelerationSmoothness_ = smoothness; }
 
 	void SetRotateSmoothness(double smoothness)
-			{ rotateSmoothness_ = smoothness; }
+			{ config_.rotateSmoothness_ = smoothness; }
 
 private:
 	void HandleUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleCameraRotated(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
-	void HandlePostRenderUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleFileChanged(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
+	void UpdatePlayerPosition(double timeStep);
+	void UpdatePlayerAngle(double timeStep);
+	void UpdatePlayerAnimation(double timeStep);
+
+	struct {
+		double walkSpeed_ = 0;
+		double trotSpeed_ = 0;
+		double runSpeed_ = 0;
+		double accelerationSmoothness_ = 1;
+		double rotateSmoothness_ = 1;
+	} config_;
+
+	double cameraAngle_ = 0;
+	double actualAngle_ = 0;
+	double targetAngle_ = 0;
+
 	Urho3D::SharedPtr<Urho3D::Scene> scene_;
+	Urho3D::SharedPtr<Urho3D::Input> input_;
 	Urho3D::SharedPtr<Urho3D::Node> node_;
 	Urho3D::SharedPtr<Urho3D::AnimationState> walkAnimation_;
 	Urho3D::SharedPtr<Urho3D::AnimationState> duckAnimation_;
-
-	double walkSpeed_;
-	double trotSpeed_;
-	double runSpeed_;
-	double accelerationSmoothness_;
-	double rotateSmoothness_;
-	double cameraAngle_;
-	double actualAngle_;
 
 	Urho3D::Vector2 actualDirection_;
 	Urho3D::VectorBuffer contacts_;

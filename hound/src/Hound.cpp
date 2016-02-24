@@ -49,6 +49,7 @@ void Hound::Setup()
 	engineParameters_["FullScreen"]  = false;
 	engineParameters_["Headless"]    = false;
 	engineParameters_["Multisample"] = 2;
+	engineParameters_["VSync"] = false;
 }
 
 // ----------------------------------------------------------------------------

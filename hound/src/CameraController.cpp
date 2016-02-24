@@ -15,19 +15,7 @@ using namespace Urho3D;
 // ----------------------------------------------------------------------------
 CameraController::CameraController(Context* context, Scene* scene) :
 	Object(context),
-	scene_(scene),
-	maxDistance_(10.0),
-	minDistance_(1.0),
-	rotateSmoothness_(1.0),
-	zoomSmoothness_(1.0),
-	mouseSensitivity_(1.0),
-	yOffset_(0.0),
-	actualAngleX_(0),
-	targetAngleX_(0),
-	actualAngleY_(0),
-	targetAngleY_(0),
-	actualDistance_(10.0),
-	targetDistance_(10.0)
+	scene_(scene)
 {
 	SubscribeToEvent(E_MOUSEMOVE, URHO3D_HANDLER(CameraController, HandleMouseMove));
 	SubscribeToEvent(E_MOUSEWHEEL, URHO3D_HANDLER(CameraController, HandleMouseWheel));
@@ -46,7 +34,7 @@ void CameraController::LoadXML(XMLFile* xml)
 
 	XMLElement root = xml->GetRoot();
 
-#define CONFIG_NODE(nodeName, setFunction) do {                             \
+#define READ_NODE(nodeName, setFunction) do {                               \
 		String name = root.GetChild(nodeName).GetAttribute("name");         \
 		if(name.Length() == 0)                                              \
 			URHO3D_LOGERROR("[CameraController] Failed to read XML "        \
@@ -56,40 +44,44 @@ void CameraController::LoadXML(XMLFile* xml)
 			URHO3D_LOGERRORF("[CameraController] Couldn't find node \"%s\" "\
 			                 "in scene", name.CString());                   \
 		else                                                                \
-			this->setFunction(node);                                        \
+			setFunction(node);                                              \
 	} while(0)
 
-#define CONFIG_DOUBLE(name, setFunction)                                    \
-		this->setFunction(root.GetChild(name).GetDouble("value"))
+#define READ_DOUBLE(name, setFunction)                                      \
+		setFunction(root.GetChild(name).GetDouble("value"))
 
-#define CONFIG_DOUBLE_WARN_ZERO(name, setFunction) do {                     \
+#define READ_DOUBLE_WARN_ZERO(name, setFunction) do {                       \
 		double value = root.GetChild(name).GetDouble("value");              \
 		if(value == 0)                                                      \
 			URHO3D_LOGWARNING("[CameraController] " name " is 0. Change "   \
 			                  "with <" name " value=\"...\" />");           \
-		this->setFunction(value);                                           \
+		setFunction(value);                                                 \
 	} while(0)
 
-#define CONFIG_DOUBLE_ERROR_ZERO(name, setFunction) do {                    \
+#define READ_DOUBLE_ERROR_ZERO(name, setFunction) do {                      \
 		double value = root.GetChild(name).GetDouble("value");              \
 		if(value == 0)                                                      \
 			URHO3D_LOGERROR("[CameraController] " name " is 0. Change with" \
 			                " <" name " value=\"...\" />");                 \
 		else                                                                \
-			this->setFunction(value);                                       \
+			setFunction(value);                                             \
 	} while(0)
 
 	// find camera node and follow node in scene and store it
-	CONFIG_NODE("CameraNode", SetNodeToControl);
-	CONFIG_NODE("FollowNode", SetNodeToFollow);
+	READ_NODE("CameraNode", SetNodeToControl);
+	READ_NODE("FollowNode", SetNodeToFollow);
 
 	// read config values
-	CONFIG_DOUBLE("YOffset", SetYOffset);
-	CONFIG_DOUBLE_WARN_ZERO("MouseSensitivity", SetMouseSensitivity);
-	CONFIG_DOUBLE_WARN_ZERO("MinDistance", SetMinDistance);
-	CONFIG_DOUBLE_WARN_ZERO("MaxDistance", SetMaxDistance);
-	CONFIG_DOUBLE_ERROR_ZERO("RotationSmoothness", SetRotationSmoothness);
-	CONFIG_DOUBLE_ERROR_ZERO("ZoomSmoothness", SetZoomSmoothness);
+	READ_DOUBLE_WARN_ZERO("MinDistance", SetMinDistance);
+	READ_DOUBLE_WARN_ZERO("MaxDistance", SetMaxDistance);
+	READ_DOUBLE_WARN_ZERO("MouseMoveSensitivity", SetMouseMoveSensitivity);
+	READ_DOUBLE_WARN_ZERO("MouseZoomSensitivity", SetMouseZoomSensitivity);
+	READ_DOUBLE_ERROR_ZERO("RotationSmoothness", SetRotationSmoothness);
+	READ_DOUBLE_ERROR_ZERO("ZoomSmoothness", SetZoomSmoothness);
+	READ_DOUBLE("YOffset", SetYOffset);
+
+	// update zoom so clamped values apply to the current zoom
+	ApplyMouseWheel(0);
 }
 
 // ----------------------------------------------------------------------------
@@ -101,8 +93,8 @@ void CameraController::HandleMouseMove(StringHash eventType, VariantMap& eventDa
 	int dx = eventData[P_DX].GetInt();
 	int dy = eventData[P_DY].GetInt();
 
-	targetAngleX_ += dy;
-	targetAngleY_ += dx;
+	targetAngleX_ += dy * config_.mouseMoveSensitivity_;
+	targetAngleY_ += dx * config_.mouseMoveSensitivity_;
 
 	// clamp X angle
 	if(targetAngleX_ >= 89)
@@ -117,12 +109,18 @@ void CameraController::HandleMouseWheel(StringHash eventType, VariantMap& eventD
 	using namespace MouseWheel;
 	(void)eventType;
 
-	int dz = eventData[P_WHEEL].GetInt();
+	ApplyMouseWheel(eventData[P_WHEEL].GetInt());
+}
 
+// ----------------------------------------------------------------------------
+void CameraController::ApplyMouseWheel(int dz)
+{
     // Mouse controls target distance
-	targetDistance_ -= dz;
-	if(targetDistance_ > maxDistance_) targetDistance_ = maxDistance_;
-	if(targetDistance_ < minDistance_) targetDistance_ = minDistance_;
+	targetDistance_ -= dz * config_.mouseZoomSensitivity_;
+	if(targetDistance_ > config_.maxDistance_)
+		targetDistance_ = config_.maxDistance_;
+	if(targetDistance_ < config_.minDistance_)
+		targetDistance_ = config_.minDistance_;
 }
 
 // ----------------------------------------------------------------------------
@@ -137,9 +135,12 @@ void CameraController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	double timeStep = eventData[P_TIMESTEP].GetDouble();
 
 	// smooth rotations and distance changes
-	actualAngleX_ += (targetAngleX_ - actualAngleX_) * timeStep / rotateSmoothness_;
-	actualAngleY_ += (targetAngleY_ - actualAngleY_) * timeStep / rotateSmoothness_;
-	actualDistance_ += (targetDistance_ - actualDistance_) * timeStep / zoomSmoothness_;
+	actualAngleX_ += (targetAngleX_ - actualAngleX_) * timeStep /
+			config_.rotateSmoothness_;
+	actualAngleY_ += (targetAngleY_ - actualAngleY_) * timeStep /
+			config_.rotateSmoothness_;
+	actualDistance_ += (targetDistance_ - actualDistance_) * timeStep /
+			config_.zoomSmoothness_;
 
 	// rotate camera
 	Vector3 cameraPosition(0, 0, -actualDistance_);
@@ -152,7 +153,8 @@ void CameraController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	cameraNode_->SetPosition(followNode_->GetPosition() + cameraPosition);
 
 	// look at follow node
-	cameraNode_->LookAt(followNode_->GetPosition() + Vector3(0, yOffset_, 0));
+	cameraNode_->LookAt(followNode_->GetPosition() +
+			Vector3(0, config_.yOffset_, 0));
 
 	// camera rotated, send an event
 	Urho3D::VariantMap map;
@@ -166,7 +168,7 @@ void CameraController::HandleFileChanged(StringHash eventType, VariantMap& event
 	using namespace FileChanged;
 	(void)eventType;
 
-	if(configResourceName_ == eventData[P_FILENAME].GetString())
+	if(configResourceName_ == eventData[P_RESOURCENAME].GetString())
 	{
 		URHO3D_LOGINFO("[CameraController] Reloading config");
 		LoadXML(GetSubsystem<ResourceCache>()->GetResource<XMLFile>(

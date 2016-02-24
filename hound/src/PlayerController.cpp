@@ -23,16 +23,12 @@ using namespace Urho3D;
 // ----------------------------------------------------------------------------
 PlayerController::PlayerController(Context* context, Scene* scene) :
 	Object(context),
-	scene_(scene),
-	walkSpeed_(1),
-	accelerationSmoothness_(1),
-	rotateSmoothness_(1),
-	cameraAngle_(0),
-	actualAngle_(0)
+	scene_(scene)
 {
+	input_ = GetSubsystem<Input>();
+
 	SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(PlayerController, HandleUpdate));
 	SubscribeToEvent(E_CAMERA_ROTATED, URHO3D_HANDLER(PlayerController, HandleCameraRotated));
-	SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(PlayerController, HandlePostRenderUpdate));
 	SubscribeToEvent(E_FILECHANGED, URHO3D_HANDLER(PlayerController, HandleFileChanged));
 }
 
@@ -48,7 +44,7 @@ void PlayerController::LoadXML(XMLFile* xml)
 
 	XMLElement root = xml->GetRoot();
 
-#define CONFIG_NODE(nodeName, setFunction) do {                             \
+#define READ_NODE(nodeName, setFunction) do {                               \
 		String name = root.GetChild(nodeName).GetAttribute("name");         \
 		if(name.Length() == 0)                                              \
 			URHO3D_LOGERROR("[CameraController] Failed to read XML "        \
@@ -58,35 +54,35 @@ void PlayerController::LoadXML(XMLFile* xml)
 			URHO3D_LOGERRORF("[CameraController] Couldn't find node \"%s\" "\
 			                 "in scene", name.CString());                   \
 		else                                                                \
-			this->setFunction(node);                                        \
+			setFunction(node);                                              \
 	} while(0)
 
-#define CONFIG_DOUBLE_WARN_ZERO(name, setFunction) do {                     \
+#define READ_DOUBLE_WARN_ZERO(name, setFunction) do {                       \
 		double value = root.GetChild(name).GetDouble("value");              \
 		if(value == 0)                                                      \
 			URHO3D_LOGWARNING("[CameraController] " name " is 0. Change "   \
 			                  "with <" name " value=\"...\" />");           \
-		this->setFunction(value);                                           \
+		setFunction(value);                                                 \
 	} while(0)
 
-#define CONFIG_DOUBLE_ERROR_ZERO(name, setFunction) do {                    \
+#define READ_DOUBLE_ERROR_ZERO(name, setFunction) do {                      \
 		double value = root.GetChild(name).GetDouble("value");              \
 		if(value == 0)                                                      \
 			URHO3D_LOGERROR("[CameraController] " name " is 0. Change with" \
 			                " <" name " value=\"...\" />");                 \
 		else                                                                \
-			this->setFunction(value);                                       \
+			setFunction(value);                                             \
 	} while(0)
 
 	// find player node in scene and store it
-	CONFIG_NODE("PlayerNode", SetNodeToControl);
+	READ_NODE("PlayerNode", SetNodeToControl);
 
 	// read config values
-	CONFIG_DOUBLE_WARN_ZERO("WalkSpeed", SetWalkSpeed);
-	CONFIG_DOUBLE_WARN_ZERO("TrotSpeed", SetTrotSpeed);
-	CONFIG_DOUBLE_WARN_ZERO("RunSpeed", SetRunSpeed);
-	CONFIG_DOUBLE_ERROR_ZERO("AccelerationSmoothness", SetAccelerationSmoothness);
-	CONFIG_DOUBLE_ERROR_ZERO("RotationSmoothness", SetRotateSmoothness);
+	READ_DOUBLE_WARN_ZERO("WalkSpeed", SetWalkSpeed);
+	READ_DOUBLE_WARN_ZERO("TrotSpeed", SetTrotSpeed);
+	READ_DOUBLE_WARN_ZERO("RunSpeed", SetRunSpeed);
+	READ_DOUBLE_ERROR_ZERO("AccelerationSmoothness", SetAccelerationSmoothness);
+	READ_DOUBLE_ERROR_ZERO("RotationSmoothness", SetRotateSmoothness);
 }
 
 // ----------------------------------------------------------------------------
@@ -115,44 +111,76 @@ void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	(void)eventType;
 
 	double timeStep = eventData[P_TIMESTEP].GetDouble();
+	UpdatePlayerPosition(timeStep);
+	UpdatePlayerAngle(timeStep);
+	UpdatePlayerAnimation(timeStep);
+}
+
+// ----------------------------------------------------------------------------
+void PlayerController::UpdatePlayerPosition(double timeStep)
+{
+double speed = config_.walkSpeed_;
 
 	// get input direction
-	Urho3D::Input* input = this->GetSubsystem<Input>();
 	Vector2 targetDirection(0, 0);
-	if(input->GetKeyDown(KEY_W)) targetDirection.y_ += 1;
-	if(input->GetKeyDown(KEY_S)) targetDirection.y_ -= 1;
-	if(input->GetKeyDown(KEY_A)) targetDirection.x_ -= 1;
-	if(input->GetKeyDown(KEY_D)) targetDirection.x_ += 1;
+	if(input_->GetKeyDown(KEY_W)) targetDirection.y_ += 1;
+	if(input_->GetKeyDown(KEY_S)) targetDirection.y_ -= 1;
+	if(input_->GetKeyDown(KEY_A)) targetDirection.x_ -= 1;
+	if(input_->GetKeyDown(KEY_D)) targetDirection.x_ += 1;
 	if(targetDirection.x_ != 0 || targetDirection.y_ != 0)
-		targetDirection = targetDirection.Normalized() * walkSpeed_;
+		targetDirection = targetDirection.Normalized() * speed;
 
 	// rotate input direction by camera angle using a 2D rotation matrix
 	targetDirection = Matrix2(Cos(cameraAngle_), -Sin(cameraAngle_),
 							  Sin(cameraAngle_), Cos(cameraAngle_)) * targetDirection;
 
-	// apply the direction
-	actualDirection_ += (targetDirection - actualDirection_) * timeStep / accelerationSmoothness_;
+	// smoothly approach target direction
+	actualDirection_ += (targetDirection - actualDirection_) * timeStep /
+			config_.accelerationSmoothness_;
+
+	// update player position using target direction
 	//node_->SetPosition(node_->GetPosition() + Vector3(actualDirection_.x_, 0, actualDirection_.y_) * timeStep);
 	node_->GetComponent<RigidBody>()->SetLinearVelocity(
 		Vector3(actualDirection_.x_,
 				node_->GetComponent<RigidBody>()->GetLinearVelocity().y_,
 				actualDirection_.y_));
+}
 
-	// apply rotation
-	float dotProduct = actualDirection_.y_;  // with Vector2(0, 1)
-	float determinant = actualDirection_.x_; // with Vector2(0, 1)
-	float targetAngle = Atan2(determinant, dotProduct);
-    // always approach target angle with shortest angle (max 180°) to avoid
-    // flipping
-	if(actualAngle_ - targetAngle > 180)
+// ----------------------------------------------------------------------------
+void PlayerController::UpdatePlayerAngle(double timeStep)
+{
+	// From the actual direction vector, calculate the Y angle the player
+	// should be facing. We only do this if the player is actually moving.
+	// If the player is not moving, we instead let the target angle approach
+	// the actual angle to smoothly stop rotating the player.
+	if(actualDirection_.Length() > config_.walkSpeed_ * 0.1)
+	{
+		float dotProduct = actualDirection_.y_;  // with Vector2(0, 1)
+		float determinant = actualDirection_.x_; // with Vector2(0, 1)
+		targetAngle_ = Atan2(determinant, dotProduct);
+	}
+	else
+	{
+		targetAngle_ += (actualAngle_ - targetAngle_) * timeStep /
+				config_.rotateSmoothness_;
+	}
+
+	// always approach target angle with shortest angle (max 180°) to avoid
+	// flipping
+	if(actualAngle_ - targetAngle_ > 180)
 		actualAngle_ -= 360;
-	if(actualAngle_ - targetAngle < -180)
+	if(actualAngle_ - targetAngle_ < -180)
 		actualAngle_ += 360;
-	actualAngle_ += (targetAngle - actualAngle_) * timeStep / rotateSmoothness_;
+	actualAngle_ += (targetAngle_ - actualAngle_) * timeStep /
+			config_.rotateSmoothness_;
 
+	// apply actual angle to player angle
 	node_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
+}
 
-	// update animation
+// ----------------------------------------------------------------------------
+void PlayerController::UpdatePlayerAnimation(double timeStep)
+{
 	AnimatedModel* model = node_->GetComponent<AnimatedModel>();
 	if(model->GetNumAnimationStates())
 	{
@@ -171,35 +199,12 @@ void PlayerController::HandleCameraRotated(StringHash eventType, VariantMap& eve
 }
 
 // ----------------------------------------------------------------------------
-void PlayerController::HandlePostRenderUpdate(StringHash eventType, VariantMap& eventData)
-{
-	(void)eventType;
-	(void)eventData;
-
-	DebugRenderer* renderer = node_->GetParentComponent<DebugRenderer>();
-	if(!renderer)
-		return;
-
-	contacts_.Seek(0);
-	while(!contacts_.IsEof())
-	{
-		Vector3 position = contacts_.ReadVector3();
-		Vector3 normal = contacts_.ReadVector3();
-		float distance = contacts_.ReadFloat();
-		float impulse = contacts_.ReadFloat();
-		(void)impulse;
-
-		renderer->AddCircle(position, normal, distance, Color(255, 0, 0));
-	}
-}
-
-// ----------------------------------------------------------------------------
 void PlayerController::HandleFileChanged(StringHash eventType, VariantMap& eventData)
 {
 	using namespace FileChanged;
 	(void)eventType;
 
-	if(configResourceName_ == eventData[P_FILENAME].GetString())
+	if(configResourceName_ == eventData[P_RESOURCENAME].GetString())
 	{
 		URHO3D_LOGINFO("[PlayerController] Reloading config");
 		LoadXML(GetSubsystem<ResourceCache>()->GetResource<XMLFile>(
