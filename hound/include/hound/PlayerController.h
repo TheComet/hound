@@ -10,6 +10,8 @@ namespace Urho3D {
 	class AnimationState;
 	class Context;
 	class Node;
+	class Scene;
+	class XMLFile;
 }
 
 class PlayerController : public Urho3D::Object
@@ -23,6 +25,8 @@ public:
 	 * @param context Urho3D context object.
 	 */
 	PlayerController(Urho3D::Context* context);
+
+	void LoadXML(Urho3D::XMLFile* xml, Urho3D::Scene* scene);
 
 	/*!
 	 * @brief Gives the controller a node to manipulate.
@@ -41,7 +45,6 @@ public:
 private:
 	void HandleUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleCameraRotated(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
-	void HandleCollision(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandlePostRenderUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
 	Urho3D::SharedPtr<Urho3D::Node> node_;

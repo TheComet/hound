@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<CameraController>
+    <CameraNode name="Camera" />
+    <FollowNode name="Player" />
+    <MouseSensitivity value="0.2" />
+    <YOffset value="0.4" />
+    <MinDistance value="1.5" />
+    <MaxDistance value="10" />
+    <RotationSmoothness value="0.033" />
+    <ZoomSmoothness value="0.083" />
+</CameraController>
+

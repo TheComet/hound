@@ -56,6 +56,8 @@ void Hound::Setup()
 #include <thread>
 void Hound::Start()
 {
+	cache_ = GetSubsystem<ResourceCache>();
+
 	CreateScene();
 	CreatePlayer();
 	CreateCamera();
@@ -80,11 +82,9 @@ void Hound::Stop()
 // ----------------------------------------------------------------------------
 void Hound::CreateScene()
 {
-	ResourceCache* cache = GetSubsystem<ResourceCache>();
-
 	// load scene, delete XML file after use
 	scene_ = new Scene(context_);
-	XMLFile* xmlScene = cache->GetResource<XMLFile>("Scenes/Ramps.xml");
+	XMLFile* xmlScene = cache_->GetResource<XMLFile>("Scenes/Ramps.xml");
 	if(xmlScene)
 		scene_->LoadXML(xmlScene->GetRoot());
 
@@ -103,10 +103,7 @@ void Hound::CreatePlayer()
 	}
 
 	playerController_ = new PlayerController(context_);
-	playerController_->SetNodeToControl(playerNode_);
-	playerController_->SetMaxSpeed(1.2);
-	playerController_->SetAccelerationSmoothness(0.1);
-	playerController_->SetRotateSmoothness(0.05);
+	playerController_->LoadXML(cache_->GetResource<XMLFile>("Config/PlayerController.xml"), scene_.Get());
 }
 
 // ----------------------------------------------------------------------------
@@ -125,24 +122,16 @@ void Hound::CreateCamera()
 	GetSubsystem<Renderer>()->SetViewport(0, viewport);
 
 	cameraController_ = new CameraController(context_);
-	cameraController_->SetNodeToControl(cameraNode_);
-	cameraController_->SetNodeToFollow(playerNode_);
-	cameraController_->SetMouseSensitivity(0.2);
-	cameraController_->SetYOffset(0.4);
-	cameraController_->SetMinDistance(1.5);
-	cameraController_->SetMaxDistance(10.0);
-	cameraController_->SetRotateSmoothness(0.033);
-	cameraController_->SetZoomSmoothness(0.083);
+	cameraController_->LoadXML(cache_->GetResource<XMLFile>("Config/CameraController.xml"), scene_.Get());
 }
 
 // ----------------------------------------------------------------------------
 void Hound::CreateUI()
 {
-	ResourceCache* cache = GetSubsystem<ResourceCache>();
 	UI* ui = GetSubsystem<UI>();
 	UIElement* root = ui->GetRoot();
 
-	XMLFile* xmlDefaultStyle = cache->GetResource<XMLFile>("UI/DefaultStyle.xml");
+	XMLFile* xmlDefaultStyle = cache_->GetResource<XMLFile>("UI/DefaultStyle.xml");
 	root->SetDefaultStyle(xmlDefaultStyle);
 
 	Window* window = new Window(context_);

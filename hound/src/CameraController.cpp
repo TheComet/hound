@@ -3,6 +3,10 @@
 #include <Urho3D/Scene/Node.h>
 #include <Urho3D/Core/CoreEvents.h>
 #include <Urho3D/Input/InputEvents.h>
+#include <Urho3D/IO/Log.h>
+#include <Urho3D/Resource/XMLFile.h>
+#include <Urho3D/Resource/XMLElement.h>
+#include <Urho3D/Scene/Scene.h>
 
 using namespace Urho3D;
 
@@ -25,6 +29,65 @@ CameraController::CameraController(Context* context) :
 	SubscribeToEvent(E_MOUSEMOVE, URHO3D_HANDLER(CameraController, HandleMouseMove));
 	SubscribeToEvent(E_MOUSEWHEEL, URHO3D_HANDLER(CameraController, HandleMouseWheel));
 	SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(CameraController, HandleUpdate));
+}
+
+// ----------------------------------------------------------------------------
+void CameraController::LoadXML(XMLFile* xml, Scene* scene)
+{
+	if(!xml || !scene)
+		return;
+
+	XMLElement root = xml->GetRoot();
+
+	// find camera node in scene and store it
+	String cameraNodeName = root.GetChild("CameraNode").GetAttribute("name");
+	if(cameraNodeName.Length() == 0)
+		URHO3D_LOGERROR("[CameraController] Failed to read XML attribute <CameraNode name=\"...\" />");
+	Node* cameraNode = scene->GetChild(cameraNodeName, true);
+	if(!cameraNode)
+		URHO3D_LOGERRORF("[CameraController] Couldn't find camera node \"%s\" in scene", cameraNodeName.CString());
+	else
+		this->SetNodeToControl(cameraNode);
+
+	// find follow node in scene and store it
+	String followNodeName = root.GetChild("FollowNode").GetAttribute("name");
+	if(followNodeName.Length() == 0)
+		URHO3D_LOGERROR("[CameraController] Failed to read XML attribute <FollowNode name=\"...\" />");
+	Node* followNode = scene->GetChild(followNodeName, true);
+	if(!followNode)
+		URHO3D_LOGERRORF("[CameraController] Couldn't find follow node \"%s\" in scene", followNodeName.CString());
+	else
+		this->SetNodeToFollow(followNode);
+
+	// read config values
+	double mouseSensitivity = root.GetChild("MouseSensitivity").GetDouble("value");
+	if(mouseSensitivity == 0)
+		URHO3D_LOGWARNING("[CameraController] Mouse sensitivity is 0. Change with <MouseSensitivity value=\"...\" />");
+	this->SetMouseSensitivity(mouseSensitivity);
+
+	this->SetYOffset(root.GetChild("YOffset").GetDouble("value"));
+
+	double minDistance = root.GetChild("MinDistance").GetDouble("value");
+	if(minDistance == 0)
+		URHO3D_LOGWARNING("[CameraController] Minimum camera distance is 0. Change with <MinDistance value=\"...\" />");
+	this->SetMinDistance(minDistance);
+
+	double maxDistance = root.GetChild("MaxDistance").GetDouble("value");
+	if(maxDistance == 0)
+		URHO3D_LOGWARNING("[CameraController] Maximum camera distance is 0. Change with <MaxDistance value=\"...\" />");
+	this->SetMaxDistance(maxDistance);
+
+	double rotationSmoothness = root.GetChild("RotationSmoothness").GetDouble("value");
+	if(rotationSmoothness == 0)
+		URHO3D_LOGERROR("[CameraController] Camera rotation smoothness is 0. Change with <RotationSmoothness=\"...\" />");
+	else
+		this->SetRotationSmoothness(rotationSmoothness);
+
+	double zoomSmoothness = root.GetChild("zoomSmoothness").GetDouble("value");
+	if(zoomSmoothness == 0)
+		URHO3D_LOGERROR("[CameraController] Camera zoom smoothness is 0. Change with <ZoomSmoothness=\"...\" />");
+	else
+		this->SetZoomSmoothness(zoomSmoothness);
 }
 
 // ----------------------------------------------------------------------------

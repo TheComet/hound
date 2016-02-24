@@ -6,6 +6,8 @@
 namespace Urho3D {
 	class Context;
 	class Node;
+	class Scene;
+	class XMLFile;
 }
 
 URHO3D_EVENT(E_CAMERA_ROTATED, CameraRotated)
@@ -24,6 +26,8 @@ public:
 	 */
 	CameraController(Urho3D::Context* context);
 
+	void LoadXML(Urho3D::XMLFile* xml, Urho3D::Scene* scene);
+
 	/*!
 	 * @brief Give the controller a node to manipulate as a camera.
 	 * @param node The node to control.
@@ -41,7 +45,7 @@ public:
 	void SetMaxDistance(double distance) { maxDistance_ = distance; }
 	void SetMinDistance(double distance) { minDistance_ = distance; }
 
-	void SetRotateSmoothness(double smoothness)
+	void SetRotationSmoothness(double smoothness)
 			{ rotateSmoothness_ = smoothness; }
 	void SetZoomSmoothness(double smoothness)
 			{ zoomSmoothness_ = smoothness; }

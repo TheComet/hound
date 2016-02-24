@@ -11,6 +11,10 @@
 #include <Urho3D/Graphics/DebugRenderer.h>
 #include <Urho3D/Graphics/AnimatedModel.h>
 #include <Urho3D/Graphics/AnimationState.h>
+#include <Urho3D/IO/Log.h>
+#include <Urho3D/Resource/XMLFile.h>
+#include <Urho3D/Resource/XMLElement.h>
+#include <Urho3D/Scene/Scene.h>
 
 using namespace Urho3D;
 
@@ -25,8 +29,40 @@ PlayerController::PlayerController(Context* context) :
 {
 	SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(PlayerController, HandleUpdate));
 	SubscribeToEvent(E_CAMERA_ROTATED, URHO3D_HANDLER(PlayerController, HandleCameraRotated));
-	SubscribeToEvent(E_PHYSICSCOLLISION, URHO3D_HANDLER(PlayerController, HandleCollision));
 	SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(PlayerController, HandlePostRenderUpdate));
+}
+
+// ----------------------------------------------------------------------------
+#include <iostream>
+void PlayerController::LoadXML(XMLFile* xml, Scene* scene)
+{
+	if(!xml || !scene)
+		return;
+
+	XMLElement root = xml->GetRoot();
+
+	// find player node in scene and store it
+	String playerNodeName = root.GetChild("PlayerNode").GetAttribute("name");
+	if(playerNodeName.Length() == 0)
+		URHO3D_LOGERROR("[PlayerController] Failed to read XML attribute <PlayerNode name=\"...\" />");
+	Node* playerNode = scene->GetChild(playerNodeName, true);
+	if(!playerNode)
+		URHO3D_LOGERRORF("[PlayerController] Couldn't find player node \"%s\" in scene", playerNodeName.CString());
+	else
+		this->SetNodeToControl(playerNode);
+
+	// read config values
+	double accelerationSmoothness = root.GetChild("AccelerationSmoothness").GetDouble("value");
+	if(accelerationSmoothness == 0)
+		URHO3D_LOGWARNING("[PlayerController] Failed to read XML attribute <AccelerattionSmoothness value=\"...\" />");
+	else
+		this->SetAccelerationSmoothness(accelerationSmoothness);
+
+	double rotationSmoothness = root.GetChild("RotationSmoothness").GetDouble("value");
+	if(rotationSmoothness == 0)
+		URHO3D_LOGWARNING("[PlayerController] Failed to read XML attribute <RotationSmoothness value=\"...\" />");
+	else
+		this->SetRotateSmoothness(rotationSmoothness);
 }
 
 // ----------------------------------------------------------------------------
@@ -108,22 +144,6 @@ void PlayerController::HandleCameraRotated(StringHash eventType, VariantMap& eve
 	(void)eventType;
 
 	cameraAngle_ = -eventData[P_ANGLE].GetDouble();
-}
-
-// ----------------------------------------------------------------------------
-void PlayerController::HandleCollision(StringHash eventType, VariantMap& eventData)
-{
-	using namespace PhysicsCollision;
-	(void)eventType;
-
-	contacts_ = eventData[P_CONTACTS].GetBuffer();
-	while(!contacts_.IsEof())
-	{
-		Vector3 position = contacts_.ReadVector3();
-		Vector3 normal = contacts_.ReadVector3();
-		float distance = contacts_.ReadFloat();
-		float impulse = contacts_.ReadFloat();
-	}
 }
 
 // ----------------------------------------------------------------------------
