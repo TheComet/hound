@@ -56,7 +56,9 @@ void Hound::Setup()
 #include <thread>
 void Hound::Start()
 {
+	// configure resource cache
 	cache_ = GetSubsystem<ResourceCache>();
+	cache_->SetAutoReloadResources(true);
 
 	CreateScene();
 	CreatePlayer();
@@ -102,8 +104,8 @@ void Hound::CreatePlayer()
 		return;
 	}
 
-	playerController_ = new PlayerController(context_);
-	playerController_->LoadXML(cache_->GetResource<XMLFile>("Config/PlayerController.xml"), scene_.Get());
+	playerController_ = new PlayerController(context_, scene_.Get());
+	playerController_->LoadXML(cache_->GetResource<XMLFile>("Config/PlayerController.xml"));
 }
 
 // ----------------------------------------------------------------------------
@@ -121,8 +123,8 @@ void Hound::CreateCamera()
 	viewport->SetDrawDebug(true);
 	GetSubsystem<Renderer>()->SetViewport(0, viewport);
 
-	cameraController_ = new CameraController(context_);
-	cameraController_->LoadXML(cache_->GetResource<XMLFile>("Config/CameraController.xml"), scene_.Get());
+	cameraController_ = new CameraController(context_, scene_.Get());
+	cameraController_->LoadXML(cache_->GetResource<XMLFile>("Config/CameraController.xml"));
 }
 
 // ----------------------------------------------------------------------------

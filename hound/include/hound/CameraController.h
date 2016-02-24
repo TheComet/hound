@@ -24,9 +24,9 @@ public:
 	 * @brief Cosntructs a camera controller.
 	 * @param context The Urho3D context object.
 	 */
-	CameraController(Urho3D::Context* context);
+	CameraController(Urho3D::Context* context, Urho3D::Scene* scene);
 
-	void LoadXML(Urho3D::XMLFile* xml, Urho3D::Scene* scene);
+	void LoadXML(Urho3D::XMLFile* xml);
 
 	/*!
 	 * @brief Give the controller a node to manipulate as a camera.
@@ -60,9 +60,13 @@ private:
 	void HandleMouseMove(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleMouseWheel(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void HandleUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+	void HandleFileChanged(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 
+	Urho3D::SharedPtr<Urho3D::Scene> scene_;
 	Urho3D::SharedPtr<Urho3D::Node> cameraNode_;
 	Urho3D::SharedPtr<Urho3D::Node> followNode_;
+
+	Urho3D::String configResourceName_;
 
 	double maxDistance_;
 	double minDistance_;

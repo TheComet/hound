@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <PlayerController>
     <PlayerNode name="Player" />
-    <MaxSpeed value="1.2" />
+    <WalkSpeed value="1.2" />
+    <TrotSpeed value="2" />
+    <RunSpeed value="4" />
     <AccelerationSmoothness value="0.1" />
     <RotationSmoothness value="0.05" />
 </PlayerController>

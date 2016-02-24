@@ -4,6 +4,8 @@
 #include <Urho3D/Core/CoreEvents.h>
 #include <Urho3D/Input/InputEvents.h>
 #include <Urho3D/IO/Log.h>
+#include <Urho3D/Resource/ResourceCache.h>
+#include <Urho3D/Resource/ResourceEvents.h>
 #include <Urho3D/Resource/XMLFile.h>
 #include <Urho3D/Resource/XMLElement.h>
 #include <Urho3D/Scene/Scene.h>
@@ -11,8 +13,9 @@
 using namespace Urho3D;
 
 // ----------------------------------------------------------------------------
-CameraController::CameraController(Context* context) :
+CameraController::CameraController(Context* context, Scene* scene) :
 	Object(context),
+	scene_(scene),
 	maxDistance_(10.0),
 	minDistance_(1.0),
 	rotateSmoothness_(1.0),
@@ -29,65 +32,64 @@ CameraController::CameraController(Context* context) :
 	SubscribeToEvent(E_MOUSEMOVE, URHO3D_HANDLER(CameraController, HandleMouseMove));
 	SubscribeToEvent(E_MOUSEWHEEL, URHO3D_HANDLER(CameraController, HandleMouseWheel));
 	SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(CameraController, HandleUpdate));
+	SubscribeToEvent(E_FILECHANGED, URHO3D_HANDLER(CameraController, HandleFileChanged));
 }
 
 // ----------------------------------------------------------------------------
-void CameraController::LoadXML(XMLFile* xml, Scene* scene)
+void CameraController::LoadXML(XMLFile* xml)
 {
-	if(!xml || !scene)
+	if(!xml || !scene_)
 		return;
+
+	// store file name so we can reload when it's edited
+	configResourceName_ = xml->GetName();
 
 	XMLElement root = xml->GetRoot();
 
-	// find camera node in scene and store it
-	String cameraNodeName = root.GetChild("CameraNode").GetAttribute("name");
-	if(cameraNodeName.Length() == 0)
-		URHO3D_LOGERROR("[CameraController] Failed to read XML attribute <CameraNode name=\"...\" />");
-	Node* cameraNode = scene->GetChild(cameraNodeName, true);
-	if(!cameraNode)
-		URHO3D_LOGERRORF("[CameraController] Couldn't find camera node \"%s\" in scene", cameraNodeName.CString());
-	else
-		this->SetNodeToControl(cameraNode);
+#define CONFIG_NODE(nodeName, setFunction) do {                             \
+		String name = root.GetChild(nodeName).GetAttribute("name");         \
+		if(name.Length() == 0)                                              \
+			URHO3D_LOGERROR("[CameraController] Failed to read XML "        \
+			                "attribute <" nodeName " name=\"...\" />");     \
+		Node* node = scene_->GetChild(name);                                \
+		if(!node)                                                           \
+			URHO3D_LOGERRORF("[CameraController] Couldn't find node \"%s\" "\
+			                 "in scene", name.CString());                   \
+		else                                                                \
+			this->setFunction(node);                                        \
+	} while(0)
 
-	// find follow node in scene and store it
-	String followNodeName = root.GetChild("FollowNode").GetAttribute("name");
-	if(followNodeName.Length() == 0)
-		URHO3D_LOGERROR("[CameraController] Failed to read XML attribute <FollowNode name=\"...\" />");
-	Node* followNode = scene->GetChild(followNodeName, true);
-	if(!followNode)
-		URHO3D_LOGERRORF("[CameraController] Couldn't find follow node \"%s\" in scene", followNodeName.CString());
-	else
-		this->SetNodeToFollow(followNode);
+#define CONFIG_DOUBLE(name, setFunction)                                    \
+		this->setFunction(root.GetChild(name).GetDouble("value"))
+
+#define CONFIG_DOUBLE_WARN_ZERO(name, setFunction) do {                     \
+		double value = root.GetChild(name).GetDouble("value");              \
+		if(value == 0)                                                      \
+			URHO3D_LOGWARNING("[CameraController] " name " is 0. Change "   \
+			                  "with <" name " value=\"...\" />");           \
+		this->setFunction(value);                                           \
+	} while(0)
+
+#define CONFIG_DOUBLE_ERROR_ZERO(name, setFunction) do {                    \
+		double value = root.GetChild(name).GetDouble("value");              \
+		if(value == 0)                                                      \
+			URHO3D_LOGERROR("[CameraController] " name " is 0. Change with" \
+			                " <" name " value=\"...\" />");                 \
+		else                                                                \
+			this->setFunction(value);                                       \
+	} while(0)
+
+	// find camera node and follow node in scene and store it
+	CONFIG_NODE("CameraNode", SetNodeToControl);
+	CONFIG_NODE("FollowNode", SetNodeToFollow);
 
 	// read config values
-	double mouseSensitivity = root.GetChild("MouseSensitivity").GetDouble("value");
-	if(mouseSensitivity == 0)
-		URHO3D_LOGWARNING("[CameraController] Mouse sensitivity is 0. Change with <MouseSensitivity value=\"...\" />");
-	this->SetMouseSensitivity(mouseSensitivity);
-
-	this->SetYOffset(root.GetChild("YOffset").GetDouble("value"));
-
-	double minDistance = root.GetChild("MinDistance").GetDouble("value");
-	if(minDistance == 0)
-		URHO3D_LOGWARNING("[CameraController] Minimum camera distance is 0. Change with <MinDistance value=\"...\" />");
-	this->SetMinDistance(minDistance);
-
-	double maxDistance = root.GetChild("MaxDistance").GetDouble("value");
-	if(maxDistance == 0)
-		URHO3D_LOGWARNING("[CameraController] Maximum camera distance is 0. Change with <MaxDistance value=\"...\" />");
-	this->SetMaxDistance(maxDistance);
-
-	double rotationSmoothness = root.GetChild("RotationSmoothness").GetDouble("value");
-	if(rotationSmoothness == 0)
-		URHO3D_LOGERROR("[CameraController] Camera rotation smoothness is 0. Change with <RotationSmoothness=\"...\" />");
-	else
-		this->SetRotationSmoothness(rotationSmoothness);
-
-	double zoomSmoothness = root.GetChild("zoomSmoothness").GetDouble("value");
-	if(zoomSmoothness == 0)
-		URHO3D_LOGERROR("[CameraController] Camera zoom smoothness is 0. Change with <ZoomSmoothness=\"...\" />");
-	else
-		this->SetZoomSmoothness(zoomSmoothness);
+	CONFIG_DOUBLE("YOffset", SetYOffset);
+	CONFIG_DOUBLE_WARN_ZERO("MouseSensitivity", SetMouseSensitivity);
+	CONFIG_DOUBLE_WARN_ZERO("MinDistance", SetMinDistance);
+	CONFIG_DOUBLE_WARN_ZERO("MaxDistance", SetMaxDistance);
+	CONFIG_DOUBLE_ERROR_ZERO("RotationSmoothness", SetRotationSmoothness);
+	CONFIG_DOUBLE_ERROR_ZERO("ZoomSmoothness", SetZoomSmoothness);
 }
 
 // ----------------------------------------------------------------------------
@@ -156,4 +158,19 @@ void CameraController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 	Urho3D::VariantMap map;
 	map[CameraRotated::P_ANGLE] = actualAngleY_;
 	SendEvent(E_CAMERA_ROTATED, map);
+}
+
+// ----------------------------------------------------------------------------
+void CameraController::HandleFileChanged(StringHash eventType, VariantMap& eventData)
+{
+	using namespace FileChanged;
+	(void)eventType;
+
+	if(configResourceName_ == eventData[P_FILENAME].GetString())
+	{
+		URHO3D_LOGINFO("[CameraController] Reloading config");
+		LoadXML(GetSubsystem<ResourceCache>()->GetResource<XMLFile>(
+			configResourceName_
+		));
+	}
 }
