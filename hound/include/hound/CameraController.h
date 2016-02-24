@@ -46,7 +46,7 @@ public:
 	void SetMinDistance(double distance) { config_.minDistance_ = distance; }
 
 	void SetRotationSmoothness(double smoothness)
-			{ config_.rotateSmoothness_ = smoothness; }
+			{ config_.rotationSmoothness_ = smoothness; }
 	void SetZoomSmoothness(double smoothness)
 			{ config_.zoomSmoothness_ = smoothness; }
 
@@ -75,7 +75,7 @@ private:
 	{
 		double maxDistance_ = 5;
 		double minDistance_ = 1.5;
-		double rotateSmoothness_ = 1;
+		double rotationSmoothness_ = 1;
 		double zoomSmoothness_ = 1;
 		double mouseMoveSensitivity_ = 1;
 		double mouseZoomSensitivity_ = 1;

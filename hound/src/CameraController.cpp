@@ -80,8 +80,8 @@ void CameraController::LoadXML(XMLFile* xml)
 	READ_DOUBLE_ERROR_ZERO("ZoomSmoothness", SetZoomSmoothness);
 	READ_DOUBLE("YOffset", SetYOffset);
 
-	// update zoom so clamped values apply to the current zoom
-	ApplyMouseWheel(0);
+	// update current zoom to the max zoom
+	targetDistance_ = config_.maxDistance_;
 }
 
 // ----------------------------------------------------------------------------
@@ -136,9 +136,9 @@ void CameraController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 
 	// smooth rotations and distance changes
 	actualAngleX_ += (targetAngleX_ - actualAngleX_) * timeStep /
-			config_.rotateSmoothness_;
+			config_.rotationSmoothness_;
 	actualAngleY_ += (targetAngleY_ - actualAngleY_) * timeStep /
-			config_.rotateSmoothness_;
+			config_.rotationSmoothness_;
 	actualDistance_ += (targetDistance_ - actualDistance_) * timeStep /
 			config_.zoomSmoothness_;
 

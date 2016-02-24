@@ -7,6 +7,7 @@
 #include <Urho3D/IO/VectorBuffer.h>
 
 namespace Urho3D {
+	class AnimatedModel;
 	class AnimationState;
 	class Context;
 	class DebugRenderer;
@@ -43,8 +44,8 @@ public:
 	void SetAccelerationSmoothness(double smoothness)
 			{ config_.accelerationSmoothness_ = smoothness; }
 
-	void SetRotateSmoothness(double smoothness)
-			{ config_.rotateSmoothness_ = smoothness; }
+	void SetRotationSmoothness(double smoothness)
+			{ config_.rotationSmoothness_ = smoothness; }
 
 private:
 	void HandleUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
@@ -60,8 +61,18 @@ private:
 		double trotSpeed_ = 0;
 		double runSpeed_ = 0;
 		double accelerationSmoothness_ = 1;
-		double rotateSmoothness_ = 1;
+		double rotationSmoothness_ = 1;
 	} config_;
+
+	struct SpineBone {
+		double factor_ = 1;
+		double maxAngle_ = 180;
+	};
+
+	struct SpineBoneController {
+		Urho3D::SharedPtr<Urho3D::AnimationState> animState_;
+		Urho3D::Vector<SpineBone> spineBones_;
+	} spineBoneController_;
 
 	double cameraAngle_ = 0;
 	double actualAngle_ = 0;
@@ -69,7 +80,7 @@ private:
 
 	Urho3D::SharedPtr<Urho3D::Scene> scene_;
 	Urho3D::SharedPtr<Urho3D::Input> input_;
-	Urho3D::SharedPtr<Urho3D::Node> node_;
+	Urho3D::SharedPtr<Urho3D::Node> playerNode_;
 	Urho3D::SharedPtr<Urho3D::AnimationState> walkAnimation_;
 	Urho3D::SharedPtr<Urho3D::AnimationState> duckAnimation_;
 

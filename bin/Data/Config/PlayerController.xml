@@ -6,5 +6,10 @@
     <RunSpeed value="5.5" />
     <AccelerationSmoothness value="0.3" />
     <RotationSmoothness value="0.2" />
+    <SpineBones>
+        <Bone name="Back"       factor="1" maxAngle="20" />
+        <Bone name="UpperSpine" factor="1" maxAngle="20" />
+        <Bone name="LowerSpine" factor="1" maxAngle="20" />
+    </SpineBones>
 </PlayerController>
 

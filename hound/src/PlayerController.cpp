@@ -2,14 +2,17 @@
 #include "hound/CameraController.h"
 
 #include <Urho3D/Core/CoreEvents.h>
+#include <Urho3D/Core/StringUtils.h>
 #include <Urho3D/Input/InputEvents.h>
 #include <Urho3D/Input/Input.h>
 #include <Urho3D/Math/Matrix2.h>
 #include <Urho3D/Physics/PhysicsEvents.h>
 #include <Urho3D/Physics/RigidBody.h>
-#include <Urho3D/Graphics/DebugRenderer.h>
+#include <Urho3D/Graphics/Animation.h>
 #include <Urho3D/Graphics/AnimatedModel.h>
 #include <Urho3D/Graphics/AnimationState.h>
+#include <Urho3D/Graphics/DebugRenderer.h>
+#include <Urho3D/Graphics/Skeleton.h>
 #include <Urho3D/IO/Log.h>
 #include <Urho3D/Resource/ResourceCache.h>
 #include <Urho3D/Resource/ResourceEvents.h>
@@ -82,29 +85,93 @@ void PlayerController::LoadXML(XMLFile* xml)
 	READ_DOUBLE_WARN_ZERO("TrotSpeed", SetTrotSpeed);
 	READ_DOUBLE_WARN_ZERO("RunSpeed", SetRunSpeed);
 	READ_DOUBLE_ERROR_ZERO("AccelerationSmoothness", SetAccelerationSmoothness);
-	READ_DOUBLE_ERROR_ZERO("RotationSmoothness", SetRotateSmoothness);
+	READ_DOUBLE_ERROR_ZERO("RotationSmoothness", SetRotationSmoothness);
+
+	// read spine bones, these are deformed procedurally when the player angle
+	// changes
+	spineBoneController_.spineBones_.Clear();
+	spineBoneController_.animState_.Reset();
+	for(;;)
+	{
+		break;
+		if(!playerNode_)
+			break;
+		XMLElement spineBones = root.GetChild("SpineBones").GetChild("Bone");
+		if(!spineBones)
+		{
+			URHO3D_LOGWARNING("[PlayerController] No spine bones were "
+				"specified. You can specify spine bones to deform when the "
+				"player turns with:\n"
+				"<SpineBones>\n"
+				"	<Bone name=\"...\" factor=\"...\" maxAngle=\"...\" />\n"
+				"	...\n"
+				"</SpineBones>");
+			break;
+		}
+
+		for(; spineBones; spineBones = spineBones.GetNext("Bone"))
+		{
+			String name = spineBones.GetAttribute("name");
+			Node* node = playerNode_->GetChild(name, true);
+			if(!node)
+			{
+				URHO3D_LOGERRORF("[PlayerController] Couldn't find bone "
+				                 "\"%s\"", name.CString());
+				continue;
+			}
+
+			// set spine bone attributes
+			SpineBone spineBone;
+			String factorStr = spineBones.GetAttribute("factor");
+			String maxAngleStr = spineBones.GetAttribute("maxAngle");
+			spineBone.factor_ = ToDouble(factorStr);
+			spineBone.maxAngle_ = ToDouble(maxAngleStr);
+			// handle default values
+			if(factorStr.Length() == 0)
+				spineBone.factor_ = 1.0;
+			if(maxAngleStr.Length() == 0)
+				spineBone.maxAngle_ = 180;
+
+			spineBoneController_.spineBones_.Push(spineBone);
+		}
+		break;
+	}
+
+	Animation* animation = new Animation(context_);
+	AnimationTrack* track = animation->CreateTrack("Back");
+	AnimationKeyFrame key;
+	key.rotation_ = Quaternion(50, Vector3::UP);
+	track->InsertKeyFrame(0, key);
+
+	AnimatedModel* model = playerNode_->GetComponent<AnimatedModel>();
+	AnimationState* animState = model->AddAnimationState();
+	animState->SetStartBone(model->GetSkeleton().GetBone("Back"));
+	animState->SetLayer(0);
+	animState->SetWeight(1);
+	animState->SetTime(0);
+	animState->Apply();
 }
 
 // ----------------------------------------------------------------------------
 void PlayerController::SetNodeToControl(Node* node)
 {
-	node_ = SharedPtr<Node>(node);
+	playerNode_ = SharedPtr<Node>(node);
 
-	if(node_)
-		node_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
+	if(playerNode_)
+		playerNode_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
 
-	AnimatedModel* model = node_->GetComponent<AnimatedModel>();
+	AnimatedModel* model = playerNode_->GetComponent<AnimatedModel>();
 	if(model && model->GetNumAnimationStates())
 	{
 		AnimationState* state = model->GetAnimationStates()[0];
-		state->SetWeight(1);
+		state->SetWeight(0);
 	}
 }
 
 // ----------------------------------------------------------------------------
 void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 {
-	if(!node_)
+	if(!playerNode_)
 		return;
 
 	using namespace Update;
@@ -119,7 +186,7 @@ void PlayerController::HandleUpdate(StringHash eventType, VariantMap& eventData)
 // ----------------------------------------------------------------------------
 void PlayerController::UpdatePlayerPosition(double timeStep)
 {
-double speed = config_.walkSpeed_;
+	double speed = config_.walkSpeed_;
 
 	// get input direction
 	Vector2 targetDirection(0, 0);
@@ -140,9 +207,9 @@ double speed = config_.walkSpeed_;
 
 	// update player position using target direction
 	//node_->SetPosition(node_->GetPosition() + Vector3(actualDirection_.x_, 0, actualDirection_.y_) * timeStep);
-	node_->GetComponent<RigidBody>()->SetLinearVelocity(
+	playerNode_->GetComponent<RigidBody>()->SetLinearVelocity(
 		Vector3(actualDirection_.x_,
-				node_->GetComponent<RigidBody>()->GetLinearVelocity().y_,
+				playerNode_->GetComponent<RigidBody>()->GetLinearVelocity().y_,
 				actualDirection_.y_));
 }
 
@@ -153,7 +220,8 @@ void PlayerController::UpdatePlayerAngle(double timeStep)
 	// should be facing. We only do this if the player is actually moving.
 	// If the player is not moving, we instead let the target angle approach
 	// the actual angle to smoothly stop rotating the player.
-	if(actualDirection_.Length() > config_.walkSpeed_ * 0.1)
+	double speed = actualDirection_.Length();
+	if(speed > config_.walkSpeed_ * 0.1)
 	{
 		float dotProduct = actualDirection_.y_;  // with Vector2(0, 1)
 		float determinant = actualDirection_.x_; // with Vector2(0, 1)
@@ -162,7 +230,7 @@ void PlayerController::UpdatePlayerAngle(double timeStep)
 	else
 	{
 		targetAngle_ += (actualAngle_ - targetAngle_) * timeStep /
-				config_.rotateSmoothness_;
+				config_.rotationSmoothness_;
 	}
 
 	// always approach target angle with shortest angle (max 180°) to avoid
@@ -171,17 +239,17 @@ void PlayerController::UpdatePlayerAngle(double timeStep)
 		actualAngle_ -= 360;
 	if(actualAngle_ - targetAngle_ < -180)
 		actualAngle_ += 360;
-	actualAngle_ += (targetAngle_ - actualAngle_) * timeStep /
-			config_.rotateSmoothness_;
+	double delta = targetAngle_ - actualAngle_;
+	actualAngle_ += delta * timeStep * speed / config_.rotationSmoothness_;
 
 	// apply actual angle to player angle
-	node_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
+	playerNode_->SetRotation(Quaternion(actualAngle_, Vector3::UP));
 }
 
 // ----------------------------------------------------------------------------
 void PlayerController::UpdatePlayerAnimation(double timeStep)
 {
-	AnimatedModel* model = node_->GetComponent<AnimatedModel>();
+	AnimatedModel* model = playerNode_->GetComponent<AnimatedModel>();
 	if(model->GetNumAnimationStates())
 	{
 		AnimationState* state = model->GetAnimationStates()[0];
