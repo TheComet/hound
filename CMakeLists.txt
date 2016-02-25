@@ -12,18 +12,18 @@ message (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 project (hound)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -rdynamic -Wall -Wextra -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wall -Wextra")
- 
+
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake/Modules")
 set (CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_SOURCE_DIR}/urho3d")
- 
+
 include (Urho3D-CMake-common)
 
 find_package (Urho3D REQUIRED)
 include_directories(${URHO3D_INCLUDE_DIRS})
- 
+
 include_directories("hound/include")
 add_subdirectory ("hound")
-
+add_subdirectory ("iksolver")
