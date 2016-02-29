@@ -136,20 +136,6 @@ void PlayerController::LoadXML(XMLFile* xml)
 		}
 		break;
 	}
-
-	Animation* animation = new Animation(context_);
-	AnimationTrack* track = animation->CreateTrack("Back");
-	AnimationKeyFrame key;
-	key.rotation_ = Quaternion(50, Vector3::UP);
-	track->InsertKeyFrame(0, key);
-
-	AnimatedModel* model = playerNode_->GetComponent<AnimatedModel>();
-	AnimationState* animState = model->AddAnimationState();
-	animState->SetStartBone(model->GetSkeleton().GetBone("Back"));
-	animState->SetLayer(0);
-	animState->SetWeight(1);
-	animState->SetTime(0);
-	animState->Apply();
 }
 
 // ----------------------------------------------------------------------------

@@ -60,6 +60,7 @@ public:
 
 private:
 	void HandleMouseMove(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
+    void ApplyMouseMove(int dx, int dy);
 	void HandleMouseWheel(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);
 	void ApplyMouseWheel(int dz);
 	void HandleUpdate(Urho3D::StringHash eventType, Urho3D::VariantMap& eventData);

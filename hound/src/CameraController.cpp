@@ -90,17 +90,16 @@ void CameraController::HandleMouseMove(StringHash eventType, VariantMap& eventDa
 	using namespace MouseMove;
 	(void)eventType;
 
-	int dx = eventData[P_DX].GetInt();
-	int dy = eventData[P_DY].GetInt();
+	ApplyMouseMove(eventData[P_DX].GetInt(),
+	               eventData[P_DY].GetInt());
+}
 
+// ----------------------------------------------------------------------------
+void CameraController::ApplyMouseMove(int dx, int dy)
+{
 	targetAngleX_ += dy * config_.mouseMoveSensitivity_;
 	targetAngleY_ += dx * config_.mouseMoveSensitivity_;
-
-	// clamp X angle
-	if(targetAngleX_ >= 89)
-		targetAngleX_ = 89;
-	if(targetAngleX_ <= -89)
-		targetAngleX_ = -89;
+	dx = Clamp(dx, -89, 89);
 }
 
 // ----------------------------------------------------------------------------
@@ -117,10 +116,9 @@ void CameraController::ApplyMouseWheel(int dz)
 {
     // Mouse controls target distance
 	targetDistance_ -= dz * config_.mouseZoomSensitivity_;
-	if(targetDistance_ > config_.maxDistance_)
-		targetDistance_ = config_.maxDistance_;
-	if(targetDistance_ < config_.minDistance_)
-		targetDistance_ = config_.minDistance_;
+	targetDistance_ = Clamp(targetDistance_,
+	                        config_.minDistance_,
+	                        config_.maxDistance_);
 }
 
 // ----------------------------------------------------------------------------
